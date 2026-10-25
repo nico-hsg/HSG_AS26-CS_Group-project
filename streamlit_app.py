@@ -49,17 +49,42 @@ SEASON_MONTHS = [12, 1, 2, 3, 4]  # December to April
 # Website part: nothing visible directly. Everything else is built on this data.
 # =============================================================================
 
+@st.cache_data
 def load_stations():
     """
-    Goal:     A list of the MeteoSwiss stations that measure snow depth.
-    Website:  Not visible. Decides which resorts can get a snow forecast.
-    Returns:  a table with station_code, station_name, lat, lon, altitude_m
+    Goal:       A list of the MeteoSwiss stations that measure snow depth, with their position and altitude.
+    Website:    Not visible. Decides which resorts can get a snow forecast.
+    Source:     MeteoSwiss Open Data (ch.meteoschweiz.ogd-nime)
+    Returns:    A table with station_code, station_name, lat, lon, and altitude_m
     """
-    # TODO [NICO | Task 3]
-    # Hint:      MeteoSwiss Open Data (data.geo.admin.ch, collection "ch.meteoschweiz.ogd-nime").
-    #            Start with 10 to 20 stations, so the app loads fast.
-    # Done when: the table contains Davos (DAV) at about 1594 m.
-    pass
+
+    # Loading weather station data from Meteoschweiz.
+    stations = pd.read_csv(
+        "https://data.geo.admin.ch/ch.meteoschweiz.ogd-nime/ogd-nime_meta_stations.csv",
+        sep=";",
+        encoding="cp1252"
+    )
+
+    # Loading inventory data on which station measures which parameter, and since when.
+    inventory = pd.read_csv(
+        "https://data.geo.admin.ch/ch.meteoschweiz.ogd-nime/ogd-nime_meta_datainventory.csv",
+        sep=";",
+        encoding="cp1252"        
+    )
+
+    # Keeping only the stations that measure snow depth.
+    snow_inventory = inventory[inventory["parameter_shortname"] == "hto000d0"]
+    stations = stations[stations["station_abbr"].isin(snow_inventory["station_abbr"])]
+
+    # Trimming stations to only include target columns.
+    stations = stations.rename(columns={"station_abbr": "station_code",
+                                       "station_coordinates_wgs84_lat": "lat",
+                                       "station_coordinates_wgs84_lon": "lon",
+                                       "station_height_masl": "altitude_m"
+                                       })
+    stations = stations[["station_code", "station_name", "lat", "lon", "altitude_m"]]
+
+    return stations
 
 
 def load_snow_depth(station_code, start_date, end_date):
