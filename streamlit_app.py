@@ -54,8 +54,8 @@ def load_stations():
     """
     Goal:       A list of the MeteoSwiss stations that measure snow depth, with their position and altitude.
     Website:    Not visible. Decides which resorts can get a snow forecast.
-    Source:     MeteoSwiss Open Data (ch.meteoschweiz.ogd-nime)
-    Returns:    A table with station_code, station_name, lat, lon, and altitude_m
+    Source:     MeteoSwiss Open Data (ch.meteoschweiz.ogd-nime).
+    Returns:    A table with station_code, station_name, lat, lon, and altitude_m.
     """
 
     # Loading weather station data from Meteoschweiz.
@@ -69,14 +69,14 @@ def load_stations():
     inventory = pd.read_csv(
         "https://data.geo.admin.ch/ch.meteoschweiz.ogd-nime/ogd-nime_meta_datainventory.csv",
         sep=";",
-        encoding="cp1252"        
+        encoding="cp1252"
     )
 
     # Keeping only the stations that measure snow depth.
     snow_inventory = inventory[inventory["parameter_shortname"] == "hto000d0"]
     stations = stations[stations["station_abbr"].isin(snow_inventory["station_abbr"])]
 
-    # Trimming stations to only include target columns.
+    # Renaming and trimming stations to only include target columns.
     stations = stations.rename(columns={"station_abbr": "station_code",
                                        "station_coordinates_wgs84_lat": "lat",
                                        "station_coordinates_wgs84_lon": "lon",
@@ -87,19 +87,52 @@ def load_stations():
     return stations
 
 
+@st.cache_data
 def load_snow_depth(station_code, start_date, end_date):
     """
-    Goal:     The measured snow depth per day for one station.
-    Input:    station_code (e.g. "DAV"), start_date, end_date
-    Website:  Not visible directly. Used for the labels, the model and the snow depth chart.
-    Returns:  a table with station_code, date, snow_depth_cm
+    Goal:       Timeseries of snow depth in cm for a certain station over a certain time interval.
+    Input:      station_code ("DAV"), start_date and end_date ("2020-01-01", text or date)
+    Website:    Not visible directly. Used for the labels, the model and the snow depth chart.
+    Source:     MeteoSwiss Open Data (ch.meteoschweiz.ogd-nime).
+    Note:       Combines historical and recent (current year) data; Missing days stay empty (NaN); start_date and end_date are inclusive
+    Returns:    A table with station_code, date, snow_depth_cm.
     """
-    # TODO [NICO | Task 3]
-    # Hint:      Same MeteoSwiss collection, column "hto000d0" is the snow depth.
-    #            A missing day must stay empty, never 0 (0 cm would make it a bad week).
-    #            Streamlit's @st.cache_data lets the app download this only once.
-    # Done when: Davos for the year 2020 gives 366 rows.
-    pass
+
+    # Creating data source URL per station code (historical and recent (current year)).
+    code = station_code.lower()
+    url_historical = f"https://data.geo.admin.ch/ch.meteoschweiz.ogd-nime/{code}/ogd-nime_{code}_d_historical.csv"
+    url_recent = f"https://data.geo.admin.ch/ch.meteoschweiz.ogd-nime/{code}/ogd-nime_{code}_d_recent.csv"
+
+    # Loading station timeseries (historical and recent (current year)).
+    historical = pd.read_csv(
+        url_historical,
+        sep=";",
+        encoding="cp1252"
+    )
+    recent = pd.read_csv(
+        url_recent,
+        sep=";",
+        encoding="cp1252"
+    )
+
+    # Stacking station timeseries, with continuous index.
+    all_years = pd.concat([historical, recent], ignore_index=True)
+
+    # Converting timeseries text dates into real dates, enabling correct filtering.
+    all_years["date"] = pd.to_datetime(all_years["reference_timestamp"], format="%d.%m.%Y %H:%M")
+
+    # Trimming timeseries to only include data from start date (inclusive) to end date (inclusive).
+    start = pd.to_datetime(start_date)
+    end = pd.to_datetime(end_date)
+    all_years = all_years[all_years["date"].between(start, end)]
+
+    # Renaming and trimming timeseries to only include target columns, and refreshing index.
+    all_years = all_years.rename(columns={"station_abbr": "station_code",
+                                          "hto000d0": "snow_depth_cm"
+                                          })
+    all_years = all_years[["station_code", "date", "snow_depth_cm"]].reset_index(drop=True)
+
+    return all_years
 
 
 def load_weather(lat, lon, start_date, end_date):
