@@ -29,7 +29,7 @@ different sections automatically, but not when two people change the same lines.
 import streamlit as st
 import pandas as pd
 import requests
-from data import load_stations, load_snow_depth, load_weather, load_resorts
+from data import load_stations, load_snow_depth, load_weather, load_resorts, link_stations_to_resorts
 
 # Add more imports here when you need them, for example:
 #   folium and streamlit_folium (map), plotly (charts), sklearn (model)
@@ -55,19 +55,6 @@ SEASON_MONTHS = [12, 1, 2, 3, 4]  # December to April
 # SECTION 2: GOOD-WEEK LABELS (Nico + Julian, Task 4)
 # Website part: nothing visible directly. This is the "answer" the model learns from.
 # =============================================================================
-
-def link_stations_to_resorts(resorts, stations):
-    """
-    Goal:     Find the station that speaks for each resort, or none.
-    Input:    the resorts table and the stations table
-    Website:  Resorts without a station are grey on the map and get no snow forecast.
-    Returns:  the resorts table plus station_code (empty if no good station is close)
-    """
-    # TODO [NICO | Task 4]
-    # Hint:      Close by (e.g. within 15 km) and at a similar altitude. Write down your rule,
-    #            you will explain it in the video.
-    # Done when: Davos gets DAV, and some low or remote resorts get no station.
-    pass
 
 
 def label_good_weeks(snow_depth):

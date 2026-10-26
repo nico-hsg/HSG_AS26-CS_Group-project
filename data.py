@@ -108,6 +108,7 @@ def mark_downloaded(dataset, location):
     conn.commit()
     conn.close()
 
+
 def needs_download(dataset, location):
     """
     Goal:       Determine whether data needs a fresh download or not.
@@ -158,6 +159,30 @@ def download_snow_file(url):
     snow = snow[["station_code", "date", "snow_depth_cm"]].reset_index(drop=True)
 
     return snow
+
+
+# Rule for linking a snow station to a resort:
+# a station counts if it is at most MAX_STATION_DISTANCE_KM away and at most
+# MAX_STATION_BELOW_BASE_M below the resort's lowest point.
+#  If that applies to multiple stations, the nearest one (horizontal distance) wins.
+MAX_STATION_DISTANCE_KM = 15
+MAX_STATION_BELOW_BASE_M = 200
+
+KM_PER_LAT = 111  # km per degree of latitude (north-south)
+KM_PER_LON = 76  # km per degree of longitude at Swiss latitudes (east-west)
+
+
+def measure_distance_km(lat1, lon1, lat2, lon2):
+    """
+    Goal:       Measure distance between two geographical points.
+    Input:      2 set of latitude and longitude (lat1, lon1, lat2, lon2)
+    Website:    Not visible. Background calculation.
+    Returns:    A distance value in km.
+    """
+    north_south_km = abs(lat2 - lat1) * KM_PER_LAT
+    east_west_km = abs(lon2 - lon1) * KM_PER_LON
+
+    return ((north_south_km ** 2) + (east_west_km ** 2)) ** (1/2)  # Using pythagoras
 
 
 # =============================================================================
@@ -266,8 +291,43 @@ def load_resorts():
     # Reading the hand-made resort list
     resorts = pd.read_csv(RESORTS_PATH)
 
-    # Keeping the team's columns in a fixed order (protects against changes in the file)
+    # Keeping the columns in a fixed order
     resorts = resorts[["resort_id", "name", "canton", "lat", "lon", "base_altitude_m", "summit_altitude_m",
                        "piste_km_total", "piste_km_blue", "piste_km_red", "piste_km_black", "lifts", "source"]]
 
+    return resorts
+
+
+def link_stations_to_resorts(resorts, stations):
+    """
+    Goal:       Find the station that speaks for each resort, or none.
+    Input:      The resorts table (load_resorts) and the stations table (load_stations).
+    Website:    Resorts without a station are grey on the map and get no snow forecast.
+    Note:       Uses the above linking rules (MAX_STATION_DISTANCE_KM, MAX_STATION_BELOW_BASE_M).
+    Returns:    The resorts table plus station_code (empty if no good station is close)
+    """
+
+    resorts = resorts.copy()  # Copy to not change caller's table.
+    station_codes = []
+
+    for _, resort in resorts.iterrows():  # Iterating over all rows on the resorts table.
+        candidates = stations.copy()  # Fresh copy of all stations for this resort.
+
+        # Distance from this resort to every station (whole column at once).
+        candidates["distance_km"] = measure_distance_km(resort["lat"], resort["lon"], candidates["lat"], candidates["lon"])
+
+        # Determining min. allowed station altitude.
+        lowest_allowed_m = resort["base_altitude_m"] - MAX_STATION_BELOW_BASE_M
+
+        # Apply the rule: close enough, and not too far below the resort's base.
+        candidates = candidates[(candidates["distance_km"] <= MAX_STATION_DISTANCE_KM) & (candidates["altitude_m"] >= lowest_allowed_m)]
+
+        # The nearest suitable station wins; no suitable station means None.
+        if candidates.empty:
+            station_codes.append(None)
+        else:
+            nearest = candidates.sort_values("distance_km").iloc[0]  # Sorted near to far, so the first row is the nearest.
+            station_codes.append(nearest["station_code"])  # Appends the station code of the nearest station to the station codes list.
+
+    resorts["station_code"] = station_codes   # One station code (or None) per resort, as a new column.
     return resorts
