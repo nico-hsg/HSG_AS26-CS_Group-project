@@ -318,7 +318,21 @@ def load_resorts():
                 piste_km_total, piste_km_blue, piste_km_red, piste_km_black, lifts, source
     Note:       First version: collected with AI help from web sources and swisstopo (see GENAI_LOG.md).
                 Version 2 will take piste km and lifts from OpenStreetMap.
+    Stable:     Version 2 keeps all these columns and only adds new ones. Colour columns can be empty;
+                piste_km_total is always the official figure.
     """
+    # TODO [NICO | Task 5, Version 2] To be done later by Nico (before the December deadline).
+    # Plan:      Replace the hand-made piste km, lifts and summits with our own measurement:
+    #            1. Add a column osm_area_ids to resorts.csv (OSM "landuse=winter_sports" areas per resort,
+    #               picked by hand once: Davos is split into several areas, Zermatt is shared with Italy).
+    #            2. Overpass API (overpass.osm.ch): pistes "piste:type=downhill" by "piste:difficulty"
+    #               (novice/easy = blue, intermediate = red, advanced/expert = black, freeride left out).
+    #               Pistes drawn as areas count half their outline (tested for Laax: about 228 km vs 224 official).
+    #            3. Lifts "aerialway" without stations, zip lines and goods lifts (Laax: 37 vs 28 official).
+    #            4. Summit = highest lift end point, height from the swisstopo height API.
+    #            5. Store the results in SQLite with the logbook (refresh once a year), keep the official
+    #               figures next to ours for comparison in the "About our model" tab.
+    # Until then: the hand-made list in resorts.csv is used as it is.
 
     # Reading the hand-made resort list
     resorts = pd.read_csv(RESORTS_PATH)
