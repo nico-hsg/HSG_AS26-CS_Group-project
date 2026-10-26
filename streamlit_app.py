@@ -29,6 +29,7 @@ different sections automatically, but not when two people change the same lines.
 import streamlit as st
 import pandas as pd
 import requests
+import sqlite3 as sql
 
 # Add more imports here when you need them, for example:
 #   folium and streamlit_folium (map), plotly (charts), sklearn (model)
@@ -48,6 +49,40 @@ SEASON_MONTHS = [12, 1, 2, 3, 4]  # December to April
 # SECTION 1: GETTING THE DATA (Nico, Task 3 and 5)
 # Website part: nothing visible directly. Everything else is built on this data.
 # =============================================================================
+
+DB_PATH = "snowproof.db" # Database file, created in the project folder.
+
+def init_database():
+    """
+    Goal:       Create the SQL database, covering data needs of subsequent functions.
+    Website:    Not visible. Stores data.
+    Returns:    Nothing. Creates the tables in snowproof.db if they don't exist yet.
+    """
+    conn = sql.connect(DB_PATH)
+
+    # Create snow_depth_table, unless already existing.
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS snow_depth_table (
+            station_code TEXT,
+            date TEXT,
+            snow_depth_cm REAL,
+            PRIMARY KEY (station_code, date)
+        )
+    """)
+
+    # Create update table, unless already existing.
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS update_table (
+            dataset TEXT,
+            location TEXT,
+            download_date TEXT,
+            PRIMARY KEY (dataset, location)
+        )
+    """)
+
+    conn.commit()
+    conn.close()
+
 
 @st.cache_data
 def load_stations():

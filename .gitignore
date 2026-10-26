@@ -7,3 +7,6 @@ __pycache__/
 
 # Files macOS creates in every folder
 .DS_Store
+
+# Our SQLite database
+*.db
