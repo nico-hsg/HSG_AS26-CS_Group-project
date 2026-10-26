@@ -19,6 +19,7 @@ function names, docstrings and TODO placeholders, the documentation templates, a
 | 26.10.2026 | Nico | Claude Code | Explain how to set up the SQLite database and .gitignore, and review my code | Explanations and review only | Wrote init_database myself |
 | 26.10.2026 | Nico | Claude Code | Explain how to save and read pandas tables with SQLite, and review my code | Explanations and review only | Wrote save_snow_depth and read_snow_depth myself |
 | 26.10.2026 | Nico | Claude Code | Explain the download logbook (update_table) and give fill-in templates for mark_downloaded, needs_download and load_snow_depth; review my code | Explanations, templates with blanks, review | Filled in the logic and wrote download_snow_file myself |
+| 26.10.2026 | Nico | Claude Code | Collect the data for `resorts.csv` (20 resorts): coordinates from the swisstopo search API, summit heights from the swisstopo height API where the top lift reaches a named peak (7 resorts), other piste km, lifts and altitudes from web searches | The whole `resorts.csv`, as a first version until we compute piste km and lifts from OpenStreetMap; each row cites its sources | Chose the approach (hand-made list first, OpenStreetMap later) and which resorts to include |
 | | | | | | |
 
 ## Reflection (for the video)

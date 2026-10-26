@@ -1,0 +1,21 @@
+resort_id,name,canton,lat,lon,base_altitude_m,summit_altitude_m,piste_km_total,piste_km_blue,piste_km_red,piste_km_black,lifts,source
+1,Zermatt,VS,46.0175,7.7466,1620,3883,200,,,,50,https://www.matterhornparadise.ch/ZBAG/17-PDF/content/unternehmen/2025_EN-Factsheet%20ZBAG.pdf; summit: swisstopo height API (Klein Matterhorn)
+2,Davos Klosters,GR,46.7929,9.8208,810,2843,300,,,,55,https://www.yahoo.com/lifestyle/davos-piste-guide-130000219.html; summit: swisstopo height API (Weissfluh)
+3,Laax,GR,46.8126,9.2607,1100,3018,224,,,,28,https://www.graubuenden.ch/en/activities/winter/skiing/ski-resorts/laax; https://snowindustrynews.com/articles/laax-announces-winter-season-opening
+4,St. Moritz Corviglia,GR,46.4888,9.8353,1720,3055,155,,,,24,https://www.stmoritz.com/en/directory/mountains/corviglia; https://www.snowtrex.co.uk/switzerland/st._moritz/ski-area.html; summit: swisstopo height API (Piz Nair)
+5,Verbier 4 Vallees,VS,46.0999,7.2263,821,3328,410,,,,82,https://verbier4vallees.ch/en/ski-resort; summit: swisstopo height API (Mont Fort)
+6,Saas-Fee,VS,46.1098,7.9285,1800,3573,100,,,,23,https://www.snowtrex.co.uk/switzerland/saas-fee/ski-holidays.html
+7,Arosa Lenzerheide,GR,46.7279,9.5541,1229,2860,225,,,,43,https://en.wikipedia.org/wiki/Arosa_Lenzerheide; https://skiresort.info/ski-resort/arosa-lenzerheide; https://www.powderhounds.com/europe/switzerland/lenzerheide/ski-resort.aspx; summit: swisstopo height API (Parpaner Rothorn)
+8,Engelberg-Titlis,OW,46.8194,8.4028,1050,3028,82,,,,25,https://www.inthesnow.com/resort/engelberg-titlis/; https://iski.cc/en/resorts/2604
+9,Grindelwald-Wengen,BE,46.6242,8.0345,944,2400,103,,,,21,https://jungfrauregion.swiss/en/winter/see-and-do/skiing/ski-training-areas/grindelwald-wengen/; https://www.snowtrex.co.uk/switzerland/wengen/ski-area.html
+10,Flumserberg,SG,47.0937,9.2853,1200,2222,65,,,,17,https://flumserberg.ch/en/company/history-of-bergbahnen-flumserberg; https://skiweather.eu/go/flumserberg/333
+11,Adelboden-Lenk,BE,46.4913,7.5632,1075,2362,220,,,,65,https://www.snowtrex.co.uk/switzerland/adelboden/ski-holidays.html
+12,Gstaad,BE,46.474,7.2899,948,3016,213,,,,57,https://www.snowtrex.co.uk/switzerland/gstaad/ski-area.html
+13,Crans-Montana,VS,46.3097,7.4817,1510,2927,140,55,70,15,24,https://www.skiresort.info/ski-resort/crans-montana/; https://www.snowtrex.co.uk/switzerland/crans_montana/ski-area.html
+14,Andermatt-Sedrun-Disentis,UR,46.6359,8.5936,1227,2961,180,,,,33,https://www.andermatt-sedrun-disentis.ch/en/pages/learn-more-about-us-here; https://www.snowtrex.co.uk/switzerland/andermatt/ski-holidays.html; summit: swisstopo height API (Gemsstock)
+15,Scuol Motta Naluns,GR,46.7977,10.2978,1250,2783,70,27,32,11,12,https://www.skiresort.info/ski-resort/scuol-motta-naluns; https://www.snowtrex.co.uk/switzerland/scuol/ski-area.html
+16,Villars-Gryon-Les Diablerets,VD,46.299,7.056,1224,2120,87,66,18,3,30,https://skiresort.info/ski-resort/villarsgryonles-diablerets
+17,Muerren-Schilthorn,BE,46.5596,7.8917,796,2967,56,,,,13,https://jungfrauregion.swiss/en/summer/see-and-do/skiing/ski-training-areas/muerren-schilthorn/; https://www.skiresort.info/ski-resort/schilthorn-muerren-lauterbrunnen/; summit: swisstopo height API (Schilthorn)
+18,Aletsch Arena,VS,46.3802,8.0353,1845,2869,104,,,,35,https://valais.ch/en/explore/activities/ski-snowboard/ski-areas/aletsch-arena; https://m.snowtrex.co.uk/switzerland/riederalp/ski-area.html
+19,Meiringen-Hasliberg,BE,46.7274,8.185,1065,2433,60,20,34,6,13,https://www.skiweather.eu/profile/Hasliberg/11983
+20,Hoch-Ybrig,SZ,47.0213,8.8101,1040,1831,50,18,22,10,12,https://www.skiresort.info/ski-resort/hoch-ybrig-unteriberg-oberiberg/; https://SkiWeather.eu/go/hoch-ybrig/472

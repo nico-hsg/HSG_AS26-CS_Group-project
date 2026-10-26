@@ -16,6 +16,7 @@ import sqlite3 as sql
 # =============================================================================
 
 DB_PATH = "snowproof.db"  # Database file, created in the project folder.
+RESORTS_PATH = "resorts.csv"  # Hand-made resort list, in the project folder.
 
 def init_database():
     """
@@ -251,17 +252,22 @@ def load_weather(lat, lon, start_date, end_date):
     pass
 
 
+@st.cache_data
 def load_resorts():
     """
-    Goal:     All Swiss ski resorts with their slopes and lifts.
-    Website:  The dots on the map and the facts in the resort card.
-    Returns:  a table with resort_id, name, canton, lat, lon, base_altitude_m, summit_altitude_m,
-              piste_km_blue, piste_km_red, piste_km_black, lifts
+    Goal:       Swiss ski resorts with their slopes and lifts.
+    Website:    The dots on the map and the facts in the resort card.
+    Returns:    A table with resort_id, name, canton, lat, lon, base_altitude_m, summit_altitude_m,
+                piste_km_total, piste_km_blue, piste_km_red, piste_km_black, lifts, source
+    Note:       First version: collected with AI help from web sources and swisstopo (see GENAI_LOG.md).
+                Version 2 will take piste km and lifts from OpenStreetMap.
     """
-    # TODO [NICO | Task 5]
-    # Hint:      OpenStreetMap via the Overpass API (overpass.osm.ch). Ski areas are
-    #            "landuse=winter_sports", slopes "piste:type=downhill", lifts "aerialway".
-    #            Piste km comes from the length of the slope lines, not from counting slopes.
-    #            A hand-made list of 20 to 30 resorts is a fine first version.
-    # Done when: Zermatt, Davos and Laax are in the table with piste km and lifts.
-    pass
+
+    # Reading the hand-made resort list
+    resorts = pd.read_csv(RESORTS_PATH)
+
+    # Keeping the team's columns in a fixed order (protects against changes in the file)
+    resorts = resorts[["resort_id", "name", "canton", "lat", "lon", "base_altitude_m", "summit_altitude_m",
+                       "piste_km_total", "piste_km_blue", "piste_km_red", "piste_km_black", "lifts", "source"]]
+
+    return resorts
