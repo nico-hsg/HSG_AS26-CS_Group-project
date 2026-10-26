@@ -5,27 +5,27 @@ facts, then check the chance of a **good ski week** for your holiday dates: at l
 7 days at the station next to the resort. The chance comes from **our own machine learning model**, trained on measured
 snow depth (MeteoSwiss) and historical weather (Open-Meteo), and it is always compared with the simple historical average.
 
-**Status: skeleton.** The whole app lives in one file, `streamlit_app.py`. Every part has a placeholder with its goal,
-the part of the website it builds, a short hint and a "Done when" check. We write the code ourselves. The planned look
-is on the `ui-prototype` branch.
+**Status: skeleton.** The app lives in `streamlit_app.py`, except Section 1 (data), which is in `data.py`. Every part has a placeholder with its goal,
+the part of the website it builds, a short hint and a "Done when" check. We write the code ourselves. The planned look is on the `Prototype` branch.
 
 ## What is in this repository
 
 ```
-streamlit_app.py     the whole app, one section per person
+streamlit_app.py     everything except Section 1, one section per person
+data.py              Section 1: loading data from the APIs, and the SQLite database
 requirements.txt     the Python packages the app needs
 README.md            this file
 CONTRIBUTIONS.md     who did what
 GENAI_LOG.md         how we used AI tools
-.gitignore           files git should not upload (temporary Python files, virtual environment)
+.gitignore           files git should not upload (temporary Python files, virtual environment, SQLite database)
 ```
 
-## Sections in streamlit_app.py
+## Sections in streamlit_app.py and data.py
 
 | Section | Owner | Part of the website |
 |---|---|---|
 | 0 Settings | Fabio | the rules: 50 cm, 7 days, December to April |
-| 1 Getting the data | Nico | nothing visible, everything is built on it |
+| 1 Getting the data in data.py | Nico | nothing visible, everything is built on it |
 | 2 Good-week labels | Nico + Julian | nothing visible, the "answer" the model learns from |
 | 3 Machine learning model | Julian (+ Jan) | the chance in the snow check, the "About our model" tab |
 | 4 Location, travel, filters | Jan | sidebar filters, travel time, ranked list |
@@ -36,17 +36,17 @@ GENAI_LOG.md         how we used AI tools
 ## Run it on your computer
 
 ```bash
-git clone https://github.com/PeterPowerball/Test.git
-cd Test
+git clone https://github.com/nico-hsg/HSG_AS26-CS_Group-project.git
+cd HSG_AS26-CS_Group-project
 python -m venv .venv
-source .venv/bin/activate          # Windows: .venv\Scripts\activate
+source .venv/bin/activate          # Windows: .venv\Scripts\activate; if activation is blocked, write .venv\Scripts\python -m … in front of the commands instead
 pip install -r requirements.txt
-streamlit run streamlit_app.py
+python -m streamlit run streamlit_app.py
 ```
 
 ## Find your tasks
 
-Search `streamlit_app.py` for `TODO [YOURNAME` (for example `TODO [NICO`). Shared tasks look like `TODO [NICO+JULIAN`,
+Search `streamlit_app.py` and `data.py` for `TODO [YOURNAME` (for example `TODO [NICO`). Shared tasks look like `TODO [NICO+JULIAN`,
 so the same search finds them. Each placeholder looks like this:
 
 ```python
@@ -94,7 +94,7 @@ Important order: the labels must be ready before the model can be trained. The p
 | # | Course requirement | Where we cover it |
 |---|---|---|
 | 1 | Problem clearly stated | top of `streamlit_app.py`, this README, "About us" tab, video |
-| 2 | Data via API and/or database | Section 1 (MeteoSwiss, Open-Meteo, OpenStreetMap) and Section 4 (transport, holidays) |
+| 2 | Data via API and/or database | Section 1 (MeteoSwiss, Open-Meteo, OpenStreetMap) in `data.py` with SQLite and Section 4 (transport, holidays) |
 | 3 | Data visualization | Section 5: map, chance bar, snow depth chart, model results chart |
 | 4 | User interaction | Section 5: filters, map clicks, date input |
 | 5 | Own trained ML model | Section 3, results in the "About our model" tab |
