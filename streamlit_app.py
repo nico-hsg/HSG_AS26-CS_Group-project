@@ -50,7 +50,7 @@ SEASON_MONTHS = [12, 1, 2, 3, 4]  # December to April
 # Website part: nothing visible directly. Everything else is built on this data.
 # =============================================================================
 
-DB_PATH = "snowproof.db" # Database file, created in the project folder.
+DB_PATH = "snowproof.db"  # Database file, created in the project folder.
 
 def init_database():
     """
@@ -82,6 +82,45 @@ def init_database():
 
     conn.commit()
     conn.close()
+
+
+def save_snow_depth(snow):
+    """
+    Goal:       Save a snow depth table into snow_depth_table in SQLite.
+    Input:      Snow (a table with station_code, date, snow_depth_cm (as returned by load_snow_depth)).
+    Website:    Not visible. Stores data for later use.
+    Returns:    Nothing. Writes the rows into snowproof.db (replaces days that already exist).
+    """
+    snow = snow.copy()  # Copy to not change caller's table
+    snow["date"] = snow["date"].dt.strftime("%Y-%m-%d")  # Turn real dates into text dates
+    rows = snow.itertuples(index=False, name=None)  # Turn table into list of rows
+    conn = sql.connect(DB_PATH)
+    conn.executemany("INSERT OR REPLACE INTO snow_depth_table VALUES (?, ?, ?)", rows)  # Insert rows into snow_depth_table
+    conn.commit()
+    conn.close()
+
+
+def read_snow_depth(station_code, start_date, end_date):
+    """
+    Goal:       Read a snow depth table from SQLite.
+    Input:      Station_code, start_date and end_date
+    Website:    Not visible.
+    Returns:    A table with station_code, date, snow_depth_cm.
+    """
+    start = pd.to_datetime(start_date).strftime("%Y-%m-%d")  # Turn real dates into text dates
+    end = pd.to_datetime(end_date).strftime("%Y-%m-%d")  # Turn real dates into text dates
+    conn = sql.connect(DB_PATH)
+
+    # Filter and sort text dates table
+    result = pd.read_sql_query(
+        "SELECT station_code, date, snow_depth_cm FROM snow_depth_table WHERE station_code = ? AND date BETWEEN ? AND ? ORDER BY date",
+        conn,
+        params=(station_code, start, end),
+    )
+    conn.close()
+
+    result["date"] = pd.to_datetime(result["date"], format="%Y-%m-%d")  # Turn text dates into real dates
+    return result
 
 
 @st.cache_data
