@@ -49,6 +49,10 @@ def init_database():
     conn.close()
 
 
+# =============================================================================
+# Helper functions
+# =============================================================================
+
 def save_snow_depth(snow):
     """
     Goal:       Save a snow depth table into snow_depth_table in SQLite.
@@ -87,6 +91,77 @@ def read_snow_depth(station_code, start_date, end_date):
     result["date"] = pd.to_datetime(result["date"], format="%Y-%m-%d")  # Turn text dates into real dates
     return result
 
+
+def mark_downloaded(dataset, location):
+    """
+    Goal:       Logs the last download date of a dataset and location combination.
+    Input:      Dataset and location.
+    Website:    Not visible. Remembers when we last downloaded a file.
+    Returns:    Nothing. Writes one row into update_table.
+    """
+    now = pd.Timestamp.now().strftime("%Y-%m-%d %H:%M")  # The current date and time as text
+
+    # Write it into the logbook (replaces the old time for the same file)
+    conn = sql.connect(DB_PATH)
+    conn.execute("INSERT OR REPLACE INTO update_table VALUES (?, ?, ?)", (dataset, location, now))
+    conn.commit()
+    conn.close()
+
+def needs_download(dataset, location):
+    """
+    Goal:       Determine whether data needs a fresh download or not.
+    Input:      Dataset and location.
+    Website:    Not visible. Decides if we must download a file again.
+    Returns:    True (download it) or False (use the saved data).
+    """
+    # Look up in the logbook when this file was last downloaded
+    conn = sql.connect(DB_PATH)
+    row = conn.execute(
+        "SELECT download_date FROM update_table WHERE dataset = ? AND location = ?",
+        (dataset, location),
+    ).fetchone()
+    conn.close()
+
+    # Never downloaded before = download
+    if row is None:
+        return True
+
+    last_download = row[0]
+    today = pd.Timestamp.now().strftime("%Y-%m-%d")
+
+    # Recent file: new data every day = download if the last download was before today
+    if dataset == "snow_recent":
+        return last_download[:10] < today
+
+    # Historical file: changes once a year = download if the last download was in an earlier year
+    return last_download[:4] < today[:4]
+
+
+def download_snow_file(url):
+    """
+    Goal:       Download one MeteoSwiss snow file and prepare it
+    Input:      URL of the CSV file (historical or recent)
+    Website:    Not visible.
+    Returns:    A table with station_code, date, snow_depth_cm (all days in the file).
+    """
+    # Reading one MeteoSwiss file (historical or recent)
+    snow = pd.read_csv(url, sep=";", encoding="cp1252")
+
+    # Converting text dates into real dates
+    snow["date"] = pd.to_datetime(snow["reference_timestamp"], format="%d.%m.%Y %H:%M")
+
+    # Renaming and keeping only the target columns
+    snow = snow.rename(columns={"station_abbr": "station_code",
+                                          "hto000d0": "snow_depth_cm"
+                                          })
+    snow = snow[["station_code", "date", "snow_depth_cm"]].reset_index(drop=True)
+
+    return snow
+
+
+# =============================================================================
+# Load functions
+# =============================================================================
 
 @st.cache_data
 def load_stations():
@@ -133,45 +208,33 @@ def load_snow_depth(station_code, start_date, end_date):
     Input:      station_code ("DAV"), start_date and end_date ("2020-01-01", text or date)
     Website:    Not visible directly. Used for the labels, the model and the snow depth chart.
     Source:     MeteoSwiss Open Data (ch.meteoschweiz.ogd-nime).
-    Note:       Combines historical and recent (current year) data; Missing days stay empty (NaN); start_date and end_date are inclusive
+    Note:       Downloads a file only when needed (historical once a year, recent once a day),
+                saves it in SQLite and reads the asked dates from there. Missing days stay empty (NaN);
+                start_date and end_date are inclusive
     Returns:    A table with station_code, date, snow_depth_cm.
     """
 
-    # Creating data source URL per station code (historical and recent (current year)).
+    # Making sure the database and its tables exist
+    init_database()
+
+    # The two MeteoSwiss files for this station (historical and recent (current year))
     code = station_code.lower()
     url_historical = f"https://data.geo.admin.ch/ch.meteoschweiz.ogd-nime/{code}/ogd-nime_{code}_d_historical.csv"
     url_recent = f"https://data.geo.admin.ch/ch.meteoschweiz.ogd-nime/{code}/ogd-nime_{code}_d_recent.csv"
 
-    # Loading station timeseries (historical and recent (current year)).
-    historical = pd.read_csv(
-        url_historical,
-        sep=";",
-        encoding="cp1252"
-    )
-    recent = pd.read_csv(
-        url_recent,
-        sep=";",
-        encoding="cp1252"
-    )
+    # Historical file: download and save only if needed, THEN record it in the logbook
+    if needs_download("snow_historical", station_code):
+        snow = download_snow_file(url_historical)
+        save_snow_depth(snow)
+        mark_downloaded("snow_historical", station_code)
 
-    # Stacking station timeseries, with continuous index.
-    all_years = pd.concat([historical, recent], ignore_index=True)
+    # Recent file: the same, with its own logbook entry
+    if needs_download("snow_recent", station_code):
+        snow = download_snow_file(url_recent)
+        save_snow_depth(snow)
+        mark_downloaded("snow_recent", station_code)
 
-    # Converting timeseries text dates into real dates, enabling correct filtering.
-    all_years["date"] = pd.to_datetime(all_years["reference_timestamp"], format="%d.%m.%Y %H:%M")
-
-    # Trimming timeseries to only include data from start date (inclusive) to end date (inclusive).
-    start = pd.to_datetime(start_date)
-    end = pd.to_datetime(end_date)
-    all_years = all_years[all_years["date"].between(start, end)]
-
-    # Renaming and trimming timeseries to only include target columns, and refreshing index.
-    all_years = all_years.rename(columns={"station_abbr": "station_code",
-                                          "hto000d0": "snow_depth_cm"
-                                          })
-    all_years = all_years[["station_code", "date", "snow_depth_cm"]].reset_index(drop=True)
-
-    return all_years
+    return read_snow_depth(station_code, start_date, end_date)
 
 
 def load_weather(lat, lon, start_date, end_date):

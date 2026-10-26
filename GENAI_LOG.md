@@ -18,6 +18,7 @@ function names, docstrings and TODO placeholders, the documentation templates, a
 | 25.10.2026 | Nico | Claude Code | Explain the MeteoSwiss daily files and the pandas tools for load_snow_depth, and review my code | Explanations and review only | Wrote all of load_snow_depth myself |
 | 26.10.2026 | Nico | Claude Code | Explain how to set up the SQLite database and .gitignore, and review my code | Explanations and review only | Wrote init_database myself |
 | 26.10.2026 | Nico | Claude Code | Explain how to save and read pandas tables with SQLite, and review my code | Explanations and review only | Wrote save_snow_depth and read_snow_depth myself |
+| 26.10.2026 | Nico | Claude Code | Explain the download logbook (update_table) and give fill-in templates for mark_downloaded, needs_download and load_snow_depth; review my code | Explanations, templates with blanks, review | Filled in the logic and wrote download_snow_file myself |
 | | | | | | |
 
 ## Reflection (for the video)
