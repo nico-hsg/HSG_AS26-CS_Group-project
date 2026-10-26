@@ -9,6 +9,7 @@ streamlit_app.py imports the functions from here.
 import streamlit as st
 import pandas as pd
 import sqlite3 as sql
+import requests
 
 # =============================================================================
 # SECTION 1: GETTING THE DATA (Nico, Task 3 and 5)
@@ -17,6 +18,7 @@ import sqlite3 as sql
 
 DB_PATH = "snowproof.db"  # Database file, created in the project folder.
 RESORTS_PATH = "resorts.csv"  # Hand-made resort list, in the project folder.
+WEATHER_URL = "https://archive-api.open-meteo.com/v1/archive"  # Open-Meteo historical weather (ERA5), from 1940.
 
 def init_database():
     """
@@ -263,18 +265,48 @@ def load_snow_depth(station_code, start_date, end_date):
     return read_snow_depth(station_code, start_date, end_date)
 
 
+@st.cache_data
 def load_weather(lat, lon, start_date, end_date):
     """
-    Goal:     Historical daily weather (temperature, snowfall) for one place.
-    Input:    lat, lon, start_date, end_date
-    Website:  Not visible. Extra input for the model.
-    Returns:  a table with date, temperature_c, snowfall_cm
+    Goal:       Historical daily weather (temperature, snowfall) for one place.
+    Input:      lat, lon (degrees), start_date and end_date ("2020-01-01", text or date, both included)
+    Website:    Not visible. Extra input for the model, never the snow depth we predict.
+    Source:     Open-Meteo Historical Weather API (ERA5 reanalysis), see WEATHER_URL.
+    Note:       Open-Meteo answers for the nearest point of its weather grid, so the values are for a
+                spot close to lat/lon, not exactly at it. The last few days can be empty (NaN),
+                because the data lags a few days behind.
+    Returns:    A table with date, temperature_c, snowfall_cm (one row per day).
     """
-    # TODO [NICO | Task 3]
-    # Hint:      Open-Meteo Historical API (archive-api.open-meteo.com), data from 1950.
-    #            Use it only as model input, never as the snow depth we predict.
-    # Done when: one month for Davos gives 30 or 31 rows.
-    pass
+    # Code written by Claude Code (Anthropic) on 26.10.2026 at Nico's request, reviewed by Nico.
+
+    # The API expects dates as text in the format yyyy-mm-dd
+    start = pd.to_datetime(start_date).strftime("%Y-%m-%d")
+    end = pd.to_datetime(end_date).strftime("%Y-%m-%d")
+
+    # One request for the whole period; Swiss time zone, so a "day" means a Swiss day
+    response = requests.get(
+        WEATHER_URL,
+        params={
+            "latitude": lat,
+            "longitude": lon,
+            "start_date": start,
+            "end_date": end,
+            "daily": "temperature_2m_mean,snowfall_sum",
+            "timezone": "Europe/Zurich",
+        },
+        timeout=60,
+    )
+    # Stop with a clear error if the API refuses (e.g. a wrong date), instead of continuing with nonsense
+    response.raise_for_status()
+
+    # The "daily" part holds equal-length lists (one entry per day), which become the table's columns
+    weather = pd.DataFrame(response.json()["daily"])
+    weather = weather.rename(columns={"time": "date",
+                                      "temperature_2m_mean": "temperature_c",
+                                      "snowfall_sum": "snowfall_cm"})
+    weather["date"] = pd.to_datetime(weather["date"], format="%Y-%m-%d")
+
+    return weather[["date", "temperature_c", "snowfall_cm"]]
 
 
 @st.cache_data
