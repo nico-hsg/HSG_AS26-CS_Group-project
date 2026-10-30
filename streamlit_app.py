@@ -177,7 +177,14 @@ def filter_resorts(resorts, cantons, place, max_minutes):
     # TODO [JAN | Task 8]
     # Hint:      With no filter set, return all resorts.
     # Done when: choosing "VS" leaves only Valais resorts.
-    pass
+    filtered = resorts.copy()
+
+    # Nur Skigebiete aus den ausgewählten Kantonen behalten.
+    if cantons:
+        filtered = filtered[filtered["canton"].isin(cantons)]
+
+    # TODO: Den Reisezeitfilter ergänze ich im nächsten Schritt.
+    return filtered
 
 
 def rank_resorts(resorts, chances):
@@ -190,7 +197,24 @@ def rank_resorts(resorts, chances):
     # TODO [JAN | Task 9]
     # Hint:      Leave out resorts without a station.
     # Done when: the first row has the highest chance.
-    pass
+    # chances enthält die Vorhersagen für eine Woche (Montag bis Sonntag).
+    columns = ["resort_id", "week_start", "week_end", "probability"]
+    chances_table = pd.DataFrame(chances, columns=columns)
+
+    # 1. Skigebiete und Vorhersagen über ihre ID verbinden.
+    ranked = resorts.merge(chances_table, on="resort_id")
+
+    # 2. Gebiete ohne Vorhersage oder zugeordnete Messstation weglassen.
+    ranked = ranked.dropna(subset=["probability"])
+    if "station_code" in ranked.columns:
+        ranked = ranked.dropna(subset=["station_code"])
+
+    # 3. Nach Wahrscheinlichkeit sortieren: höchste zuerst.
+    ranked = ranked.sort_values("probability", ascending=False)
+
+    # 4. Zeilennummern neu setzen und die Rangliste zurückgeben.
+    ranked = ranked.reset_index(drop=True)
+    return ranked
 
 
 # =============================================================================
