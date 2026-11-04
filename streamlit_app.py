@@ -150,7 +150,27 @@ def travel_time_minutes(place, resort):
     # Hint:      transport.opendata.ch ("/v1/connections"). Only ask for a city or village, no
     #            street address. Dates far in the future may give no answer: use a normal weekday.
     # Done when: Zurich to Davos gives roughly 2 to 2.5 hours.
-    pass
+    start = "Zürich HB"
+    ziel = "Davos Platz"
+
+    # Testabfrage: zunächst nur Zürich HB nach Davos Platz.
+    url = "https://transport.opendata.ch/v1/connections"
+    parameter = {
+        "from": start,
+        "to": ziel,
+        "transportations[]": ["train", "bus"],
+        "limit": 1,
+    }
+
+    # Anfrage senden; nach spätestens 15 Sekunden ohne Antwort abbrechen.
+    antwort = requests.get(url, params=parameter, timeout=15)
+    antwort.raise_for_status()
+
+    # Die Antwort als Python-Daten einlesen.
+    daten = antwort.json()
+
+    # TODO: Aus daten die Reisezeit in Minuten berechnen.
+
 
 
 def school_holidays(canton):
