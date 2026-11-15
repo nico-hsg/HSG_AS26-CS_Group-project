@@ -57,18 +57,74 @@ SEASON_MONTHS = [12, 1, 2, 3, 4]  # December to April
 # =============================================================================
 
 
-def label_good_weeks(snow_depth):
-    """
-    Goal:     For every week: was it a good ski week? 1 = yes, 0 = no, empty = unknown.
-    Input:    the snow depth table from load_snow_depth()
-    Website:  Not visible directly. The model learns from these labels.
-    Returns:  a table with station_code, week_start, year, good_week
-    """
-    # TODO [NICO+JULIAN | Task 4]
-    # Hint:      Good = at least GOOD_SNOW_CM on all GOOD_WEEK_DAYS days. One day below -> 0.
-    #            A missing day (and no day below) -> unknown. Only SEASON_MONTHS count.
-    # Done when: you checked a few weeks by hand and they match the rule.
-    pass
+def check_good_week(snow_depth):
+
+    # Check that exactly 7 days are available
+    if len(snow_depth) != 7:
+        return None
+
+    # Check whether any snow measurement is missing
+    if pd.isna(snow_depth).any():
+        return None
+
+    # Calculate average snow depth
+    average = sum(snow_depth) / 7
+
+    # Decide whether it was a good week
+    if average >= 50:
+        return 1
+    else:
+        return 0
+
+
+def label_good_weeks(snow_data):
+
+    # Sort measurements by station and date
+    snow_data = snow_data.sort_values(["station_code", "date"])
+
+    # Store all evaluated weeks
+    results = []
+
+    # Go through every station separately
+    for station, station_data in snow_data.groupby("station_code"):
+
+        station_data = station_data.reset_index(drop=True)
+
+        # Check every possible seven-day period
+        for i in range(len(station_data) - 6):
+
+            week_data = station_data.iloc[i:i+7]
+
+            start_date = week_data["date"].iloc[0]
+            end_date = week_data["date"].iloc[-1]
+
+            
+            # Check that all seven dates are consecutive
+            date_differences = week_data["date"].diff().dropna()
+
+            if not (date_differences == pd.Timedelta(days=1)).all():
+                continue
+
+                      
+
+            # Only evaluate weeks fully within December-April
+            if not all(month in [12, 1, 2, 3, 4]
+                       for month in week_data["date"].dt.month):
+                continue
+
+            # Calculate the label
+            week = week_data["snow_depth_cm"].tolist()
+            label = check_good_week(week)
+
+            # Save the result
+            results.append({
+                "station_code": station,
+                "week_start": start_date,
+                "year": start_date.year,
+                "good_week": label
+            })
+
+    return pd.DataFrame(results)
 
 
 # =============================================================================
@@ -76,17 +132,32 @@ def label_good_weeks(snow_depth):
 # Website part: the chance in the snow check, and the "About our model" tab.
 # =============================================================================
 
-def historical_average(labels, station_code, week_of_year):
-    """
-    Goal:     The simple guess our model must beat: how often was this week good in the past?
-    Input:    the labels, one station, one week of the year
-    Website:  "Historical average for this week" in the snow check.
-    Returns:  a number between 0 and 1
-    """
-    # TODO [JULIAN | Task 6]
-    # Hint:      The share of good weeks in all earlier years. Skip unknown weeks.
-    # Done when: Davos in mid-February gives a high value, a low station in December a low one.
-    pass
+def historical_average(labels, station_code, month, day, prediction_year):
+
+    # Select the requested station
+    station_labels = labels[
+        labels["station_code"] == station_code
+    ]
+
+    # Select the same month and day in previous years
+    same_date = station_labels[
+        (station_labels["week_start"].dt.month == month) &
+        (station_labels["week_start"].dt.day == day) &
+        (station_labels["week_start"].dt.year < prediction_year)
+    ]
+
+    # Remove unknown weeks
+    known_weeks = same_date[
+        same_date["good_week"].notna()
+    ]
+
+    # No historical observations available
+    if len(known_weeks) == 0:
+        return None
+
+    # Calculate the historical share of good weeks
+    return known_weeks["good_week"].mean()
+
 
 
 def train_model(labels, stations):
