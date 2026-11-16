@@ -164,13 +164,22 @@ def travel_time_minutes(place, resort):
         "limit": 1,
     }
 
+
     # Anfrage senden; nach spätestens 15 Sekunden ohne Antwort abbrechen.
     antwort = requests.get(url, params=parameter, timeout=15)
     antwort.raise_for_status()
 
     # Die Antwort als Python-Daten einlesen.
     daten = antwort.json()
+    verbindungen = daten["connections"]
+    if not verbindungen:
+        return None
+    verbindung =  verbindungen [0]
+    abfahrt = verbindung ["from"]["departureTimestamp"]
+    ankunft = verbindung ["to"] ["arrivalTimestamp"]
 
+    minuten = (ankunft - abfahrt)//60 
+    return minuten 
     # TODO: Aus daten die Reisezeit in Minuten berechnen.
 
 
