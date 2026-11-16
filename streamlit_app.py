@@ -242,37 +242,6 @@ def rank_resorts(resorts, chances):
 # Website part: everything on the screen. Look at the ui-prototype branch for the look.
 # =============================================================================
 
-# The following section codes the user interface. Each Subsite of the overall website is divided by if page == xy
-st.set_page_config(page_title="Snow-Proof", page_icon="🏔️", layout="wide")
-
-st.sidebar.title("🏔️ Snow-Proof")
-st.sidebar.caption("Your Swiss Snow Advisor")
-
-st.sidebar.divider()
-
-page = st.sidebar.radio(
-    "Subsite-navigation",
-    [
-        "🏠 Home",
-        "🎿 Holidayplanner",
-        "🏡 Real Estate Advisor",
-        "👥 About Us"
-    ],)
-
-# Here we code the landing page
-if page == "🏠 Home":
-
-    st.title("Welcome to Snow-Proof 🏔️")
-
-    st.subheader(
-        "Enjoy Skiing in Switzerland"
-        "Optimize the planning of your trip."
-    )
-
-# Here we code the highly important holidayplaner as our main service
-if page == "🎿 Holidayplanner":
-    st.title(" This page helps you plan your Skiing trip based on the probability of great snow circumstances")
-
 def show_sidebar():
     """
     Goal:     The optional filters on the left side.
@@ -305,7 +274,6 @@ def show_sidebar():
 
     return starting_place, possible_cantons, max_travelminutes
 
-starting_place, possible_cantons, max_travelminutes = show_sidebar()
 
 
 def show_map(resorts, chances):
@@ -364,11 +332,6 @@ def show_about_model(results):
     pass
 
 
-# Here we code the "Real Estate Advisor"
-if page == "🏡 Real Estate Advisor":
-    st.title("🏡 Alpine Real Estate Advisor")
-
-
 def show_about_us():
     """
     Goal:     Who we are and why we built Snow-Proof.
@@ -380,10 +343,47 @@ def show_about_us():
     # Done when: everyone checked their own line.
     pass
 
+
+# The following section codes the user interface. Each Subsite of the overall website is divided by if page == xy
+st.set_page_config(page_title="Snow-Proof", page_icon="🏔️", layout="wide")
+
+st.sidebar.title("🏔️ Snow-Proof")
+st.sidebar.caption("Your Swiss Snow Advisor")
+
+st.sidebar.divider()
+
+page = st.sidebar.radio(
+    "Subsite-navigation",
+    [
+        "🏠 Home",
+        "🎿 Holidayplanner",
+        "🏡 Real Estate Advisor",
+        "👥 About Us"
+    ],)
+
+# Here we code the landing page
+if page == "🏠 Home":
+
+    st.title("Welcome to Snow-Proof 🏔️")
+
+    st.subheader(
+        "Enjoy Skiing in Switzerland"
+        "Optimize the planning of your trip."
+    )
+
+# Here we code the highly important holidayplaner as our main service
+if page == "🎿 Holidayplanner":
+    st.title(" This page helps you plan your Skiing trip based on the probability of great snow circumstances")
+    starting_place, possible_cantons, max_travelminutes = show_sidebar()
+
+
+# Here we code the "Real Estate Advisor"
+if page == "🏡 Real Estate Advisor":
+    st.title("🏡 Alpine Real Estate Advisor")
+
 # Here we code the "About Us" section
 if page == "👥 About Us":
     st.title("👥 About Snow-Proof")
-
 
 # =============================================================================
 # SECTION 6: THE PAGE: PUTTING IT TOGETHER (Fabio, Task 12)
