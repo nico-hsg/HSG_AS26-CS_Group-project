@@ -285,7 +285,27 @@ def show_sidebar():
     # Hint:      st.sidebar with text input, multiselect, slider and date input.
     # Done when: changing a filter changes what the map shows.
     pass
+    st.sidebar.divider():
+    st.sidebar.subheader("Filters for your trip")
 
+    starting_place = st.sidebar.text_input(
+        "Please enter your hometown with which we should calculate your travel time",
+        placeholder="e.g. Zürich"
+    )
+
+    possible_cantons = st.sidebar.multiselect(
+        "Possible cantons for your trip",
+        ["ZH", "BE", "LU", "UR", "GR", "VS", "TI", "GL"] # Possible anwsers to be adjusted later on
+    )
+
+    max_travelminutes = st.sidebar.slider(
+        "Maximum time (in minutes) you are willing to travel",
+        min_value=30,
+        max_value=300,
+        step=15
+    )
+
+    return starting_place, possible_cantons, max_travelminutes
 
 def show_map(resorts, chances):
     """
