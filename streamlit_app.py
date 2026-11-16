@@ -285,7 +285,7 @@ def show_sidebar():
     # Hint:      st.sidebar with text input, multiselect, slider and date input.
     # Done when: changing a filter changes what the map shows.
     pass
-    st.sidebar.divider():
+
     st.sidebar.subheader("Filters for your trip")
 
     starting_place = st.sidebar.text_input(
