@@ -373,7 +373,8 @@ if page == "🏠 Home":
 
 # Here we code the highly important holidayplaner as our main service
 if page == "🎿 Holidayplanner":
-    st.title(" This page helps you plan your Skiing trip based on the probability of great snow circumstances")
+    st.title("🎿 Holidayplanner")
+    st.subheader(" This page helps you plan your Skiing trip based on the probability of great snow circumstances")
     starting_place, possible_cantons, max_travelminutes = show_sidebar()
 
 
