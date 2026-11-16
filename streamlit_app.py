@@ -271,6 +271,13 @@ if page == "🏠 Home":
 if page == "🎿 Holidayplanner":
     st.title(" This page helps you plan your Skiing trip based on the probability of great snow circumstances")
 
+elif page == "🏡 Real Estate Advisor":
+    st.title("🏡 Alpine Real Estate Advisor")
+
+elif page == "👥 About Us":
+    st.title("👥 About Snow-Proof")
+
+
 def show_sidebar():
     """
     Goal:     The optional filters on the left side.
