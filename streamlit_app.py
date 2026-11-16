@@ -255,16 +255,19 @@ def show_sidebar():
 
     st.sidebar.subheader("Filters for your trip")
 
+    # Starting location with which we calculate the travel time
     starting_place = st.sidebar.text_input(
         "Please enter your hometown with which we should calculate your travel time",
         placeholder="e.g. Zürich"
     )
 
+    # Cantons in which the user possibly wants to travel
     possible_cantons = st.sidebar.multiselect(
         "Possible cantons for your trip",
         ["ZH", "BE", "LU", "UR", "GR", "VS", "TI", "GL"] # Possible anwsers to be adjusted later on
     )
 
+    # Maximum time (in minutes) the user wants to travel from the given starting location to the disered destination
     max_travelminutes = st.sidebar.slider(
         "Maximum time (in minutes) you are willing to travel",
         min_value=30,
@@ -272,7 +275,10 @@ def show_sidebar():
         step=15
     )
 
-    return starting_place, possible_cantons, max_travelminutes
+    # Timespan in which the user's holiday takes place
+    travel_dates = x # Needs to be fully coded later on
+
+    return starting_place, possible_cantons, max_travelminutes, travel_dates
 
 
 
@@ -288,6 +294,7 @@ def show_map(resorts, chances):
     #            Bigger dot = more piste km, grey = no station, traffic light colors with dates.
     # Done when: clicking a dot opens that resort's card below the map.
     pass
+
 
 
 def show_resort_card(resort):
