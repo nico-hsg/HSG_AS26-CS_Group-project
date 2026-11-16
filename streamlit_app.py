@@ -153,9 +153,13 @@ def travel_time_minutes(place, resort):
     #            street address. Dates far in the future may give no answer: use a normal weekday.
     # Done when: Zurich to Davos gives roughly 2 to 2.5 hours.
     start = place
-    ziel = "Davos Platz" 
+    ziel = resort["transport_stop"]
 
-    # Testabfrage: zunächst nur Zürich HB nach Davos Platz.
+    # Ohne Zielhaltestelle können wir keine Verbindung abfragen.
+    if pd.isna(ziel) or ziel == "":
+        return None
+
+    # Verbindung vom Startort zur Zielhaltestelle des Skigebiets abfragen.
     url = "https://transport.opendata.ch/v1/connections"
     parameter = {
         "from": start,

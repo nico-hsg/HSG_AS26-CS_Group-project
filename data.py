@@ -339,7 +339,7 @@ def load_resorts():
 
     # Keeping the columns in a fixed order
     resorts = resorts[["resort_id", "name", "canton", "lat", "lon", "base_altitude_m", "summit_altitude_m",
-                       "piste_km_total", "piste_km_blue", "piste_km_red", "piste_km_black", "lifts", "source"]]
+                       "piste_km_total", "piste_km_blue", "piste_km_red", "piste_km_black", "lifts", "source", "transport_stop"]]
 
     return resorts
 
