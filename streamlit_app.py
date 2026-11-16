@@ -276,7 +276,7 @@ def show_sidebar():
     )
 
     # Timespan in which the user's holiday takes place
-    travel_dates = x # Needs to be fully coded later on
+    travel_dates = x # Needs to be fully coded later on with help from Jan
 
     return starting_place, possible_cantons, max_travelminutes, travel_dates
 
@@ -382,7 +382,7 @@ if page == "🏠 Home":
 if page == "🎿 Holidayplanner":
     st.title("🎿 Holidayplanner")
     st.subheader(" This page helps you plan your Skiing trip based on the probability of great snow circumstances")
-    starting_place, possible_cantons, max_travelminutes = show_sidebar()
+    starting_place, possible_cantons, max_travelminutes, travel_dates = show_sidebar()
 
 
 # Here we code the "Real Estate Advisor"
