@@ -30,8 +30,8 @@ import streamlit as st
 import pandas as pd
 import requests
 from data import load_stations, load_snow_depth, load_weather, load_resorts, link_stations_to_resorts
-import folium 
-from streamlit_folium import st_folium
+import folium
+from streamlit_folium import st_folium 
 
 # Add more imports here when you need them, for example:
 #   folium and streamlit_folium (map), plotly (charts), sklearn (model)
