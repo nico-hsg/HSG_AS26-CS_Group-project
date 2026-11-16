@@ -242,6 +242,35 @@ def rank_resorts(resorts, chances):
 # Website part: everything on the screen. Look at the ui-prototype branch for the look.
 # =============================================================================
 
+# The following section codes the overall navigation of the website, consisting of the 4 subpages
+st.set_page_config(page_title="Snow-Proof", page_icon="🏔️", layout="wide")
+
+st.sidebar.title("🏔️ Snow-Proof")
+st.sidebar.caption("Your Swiss Snow Advisor")
+
+st.sidebar.divider()
+
+page = st.sidebar.radio(
+    "NAVIGATION",
+    [
+        "🏠 Home",
+        "🎿 Holidayplanner",
+        "🏡 Real Estate Advisor",
+        "👥 About Us"
+    ],)
+
+if page == "🏠 Home":
+
+    st.title("Welcome to Snow-Proof 🏔️")
+
+    st.subheader(
+        "Enjoy Skiing in Switzerland"
+        "Optimize the planning of your trip."
+    )
+
+if page == "🎿 Holidayplanner":
+    st.title(" This page helps you plan your Skiing trip based on the probability of great snow circumstances")
+
 def show_sidebar():
     """
     Goal:     The optional filters on the left side.
@@ -327,33 +356,6 @@ def show_about_us():
 # Website part: the order of everything on the page. This is the code that actually runs.
 # =============================================================================
 
-st.set_page_config(page_title="Snow-Proof", page_icon="🏔️", layout="wide")
-st.title("🏔️ Snow-Proof")
-st.write("Where will the snow be good for your ski holiday?")
-st.info("Under construction. The sections above are being built by the team.")
-
-st.sidebar.title("🏔️ Snow-Proof")
-st.sidebar.caption("Your Swiss Snow Advisor")
-
-st.sidebar.divider()
-
-page = st.sidebar.radio(
-    "NAVIGATION",
-    [
-        "🏠 Home",
-        "🎿 Holidayplanner",
-        "🏡 Real Estate Advisor",
-        "👥 About Us"
-    ],)
-
-if page == "🏠 Home":
-
-    st.title("Welcome to Snow-Proof 🏔️")
-
-    st.subheader(
-        "Enjoy Skiing in Switzerland"
-        "Optimize the planning of your trip."
-    )
 
 # TODO [FABIO | Task 12]
 # Goal:      Call the functions above in the right order, so the page works from top to bottom.
