@@ -276,7 +276,7 @@ def show_sidebar():
     )
 
     # Timespan in which the user's holiday takes place
-    travel_dates = x # Needs to be fully coded later on with help from Jan
+    travel_dates = 1 # Needs to be fully coded later on with help from Jan
 
     return starting_place, possible_cantons, max_travelminutes, travel_dates
 
