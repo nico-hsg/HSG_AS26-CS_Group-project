@@ -251,7 +251,7 @@ st.sidebar.caption("Your Swiss Snow Advisor")
 st.sidebar.divider()
 
 page = st.sidebar.radio(
-    "NAVIGATION",
+    "Subsite-navigation",
     [
         "🏠 Home",
         "🎿 Holidayplanner",
@@ -273,6 +273,7 @@ if page == "🏠 Home":
 if page == "🎿 Holidayplanner":
     st.title(" This page helps you plan your Skiing trip based on the probability of great snow circumstances")
 
+starting_place, possible_cantons, max_travelminutes = show_sidebar() 
 
 
 def show_sidebar():
@@ -306,6 +307,8 @@ def show_sidebar():
     )
 
     return starting_place, possible_cantons, max_travelminutes
+
+
 
 def show_map(resorts, chances):
     """
