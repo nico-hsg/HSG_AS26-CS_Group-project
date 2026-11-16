@@ -273,9 +273,6 @@ if page == "🏠 Home":
 if page == "🎿 Holidayplanner":
     st.title(" This page helps you plan your Skiing trip based on the probability of great snow circumstances")
 
-starting_place, possible_cantons, max_travelminutes = show_sidebar() 
-
-
 def show_sidebar():
     """
     Goal:     The optional filters on the left side.
@@ -285,6 +282,7 @@ def show_sidebar():
     # TODO [NOAH+JAN | Task 10]
     # Hint:      st.sidebar with text input, multiselect, slider and date input.
     # Done when: changing a filter changes what the map shows.
+    pass
 
     st.sidebar.subheader("Filters for your trip")
 
@@ -307,6 +305,7 @@ def show_sidebar():
 
     return starting_place, possible_cantons, max_travelminutes
 
+starting_place, possible_cantons, max_travelminutes = show_sidebar()
 
 
 def show_map(resorts, chances):
