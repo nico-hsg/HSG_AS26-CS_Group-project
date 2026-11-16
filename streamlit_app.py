@@ -153,7 +153,7 @@ def travel_time_minutes(place, resort):
     #            street address. Dates far in the future may give no answer: use a normal weekday.
     # Done when: Zurich to Davos gives roughly 2 to 2.5 hours.
     start = place
-    ziel = resort 
+    ziel = "Davos Platz" 
 
     # Testabfrage: zunächst nur Zürich HB nach Davos Platz.
     url = "https://transport.opendata.ch/v1/connections"
