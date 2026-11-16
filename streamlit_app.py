@@ -285,7 +285,6 @@ def show_sidebar():
     # TODO [NOAH+JAN | Task 10]
     # Hint:      st.sidebar with text input, multiselect, slider and date input.
     # Done when: changing a filter changes what the map shows.
-    pass
 
     st.sidebar.subheader("Filters for your trip")
 
