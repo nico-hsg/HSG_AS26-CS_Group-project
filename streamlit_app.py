@@ -242,7 +242,7 @@ def rank_resorts(resorts, chances):
 # Website part: everything on the screen. Look at the ui-prototype branch for the look.
 # =============================================================================
 
-# The following section codes the overall navigation of the website, consisting of the 4 subpages
+# The following section codes the user interface. Each Subsite of the overall website is divided by if page == xy
 st.set_page_config(page_title="Snow-Proof", page_icon="🏔️", layout="wide")
 
 st.sidebar.title("🏔️ Snow-Proof")
@@ -259,6 +259,7 @@ page = st.sidebar.radio(
         "👥 About Us"
     ],)
 
+# Here we code the landing page
 if page == "🏠 Home":
 
     st.title("Welcome to Snow-Proof 🏔️")
@@ -268,14 +269,10 @@ if page == "🏠 Home":
         "Optimize the planning of your trip."
     )
 
+# Here we code the highly important holidayplaner as our main service
 if page == "🎿 Holidayplanner":
     st.title(" This page helps you plan your Skiing trip based on the probability of great snow circumstances")
 
-elif page == "🏡 Real Estate Advisor":
-    st.title("🏡 Alpine Real Estate Advisor")
-
-elif page == "👥 About Us":
-    st.title("👥 About Snow-Proof")
 
 
 def show_sidebar():
@@ -346,6 +343,11 @@ def show_about_model(results):
     pass
 
 
+# Here we code the "Real Estate Advisor"
+elif page == "🏡 Real Estate Advisor":
+    st.title("🏡 Alpine Real Estate Advisor")
+
+
 def show_about_us():
     """
     Goal:     Who we are and why we built Snow-Proof.
@@ -356,6 +358,10 @@ def show_about_us():
     # Hint:      A few sentences and one line per team member.
     # Done when: everyone checked their own line.
     pass
+
+# Here we code the "About Us" section
+elif page == "👥 About Us":
+    st.title("👥 About Snow-Proof")
 
 
 # =============================================================================
