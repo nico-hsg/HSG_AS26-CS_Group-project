@@ -364,7 +364,7 @@ def show_about_model(results):
 
 
 # Here we code the "Real Estate Advisor"
-elif page == "🏡 Real Estate Advisor":
+if page == "🏡 Real Estate Advisor":
     st.title("🏡 Alpine Real Estate Advisor")
 
 
@@ -380,7 +380,7 @@ def show_about_us():
     pass
 
 # Here we code the "About Us" section
-elif page == "👥 About Us":
+if page == "👥 About Us":
     st.title("👥 About Snow-Proof")
 
 
