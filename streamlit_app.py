@@ -343,7 +343,7 @@ page = st.sidebar.radio(
         "🎿 Holidayplanner",
         "🏡 Real Estate Advisor",
         "👥 About Us"
-    ],
+    ],)
 
 # TODO [FABIO | Task 12]
 # Goal:      Call the functions above in the right order, so the page works from top to bottom.
