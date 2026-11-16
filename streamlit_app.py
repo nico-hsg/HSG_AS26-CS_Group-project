@@ -331,6 +331,19 @@ st.set_page_config(page_title="Snow-Proof", page_icon="🏔️", layout="wide")
 st.title("🏔️ Snow-Proof")
 st.write("Where will the snow be good for your ski holiday?")
 st.info("Under construction. The sections above are being built by the team.")
+st.sidebar.title("🏔️ Snow-Proof")
+st.sidebar.caption("Your Swiss Alpine Experience")
+
+st.sidebar.divider()
+
+page = st.sidebar.radio(
+    "NAVIGATION",
+    [
+        "🏠 Home",
+        "🎿 Holidayplanner",
+        "🏡 Real Estate Advisor",
+        "👥 About Us"
+    ],
 
 # TODO [FABIO | Task 12]
 # Goal:      Call the functions above in the right order, so the page works from top to bottom.
