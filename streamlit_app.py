@@ -336,7 +336,7 @@ def show_map(resorts, chances):
         folium.CircleMarker(
         location=[resort["lat"], resort["lon"]], # Based on the latitude and longitude of the resorts (given by the data code), the circles are placed on the map
         radius = map_radius,
-        popup=resort["name"],
+        popup=resort_chosen["name"], # This code displays the name of the resort when clicking on it's circle on the map
         color="blue", # Colors should be adjusted later on based on the snow conditions, but for now they are all blue
         fill=True
         ).add_to(m)
@@ -349,7 +349,7 @@ def show_map(resorts, chances):
 
 
 
-def show_resort_card(resort):
+def show_resort_card(resort_chosen):
     """
     Goal:     The facts of the clicked resort.
     Input:    one resort
@@ -362,6 +362,12 @@ def show_resort_card(resort):
     #            st.session_state remembers the clicked resort between clicks.
     # Done when: every resort shows its card, and resorts without a station show a warning.
     pass
+    
+    st.subheader(f"Facts about {resort_chosen['name']}")
+    st.dataframe()
+    
+
+    
 
 
 def show_snow_check(resort, chance, average, snow_depth):
@@ -439,7 +445,7 @@ if page == "🎿 Holidayplanner":
     filtered_resorts = filter_resorts(resorts, possible_cantons, starting_place, max_travelminutes)
     st.write(f"{len(filtered_resorts)} of {len(resorts)} resorts match your filters.")
     show_map(filtered_resorts, chances=None)
-    st.dataframe(filtered_resorts) # Must be replaced by the map once the code is finished 
+    show_resort_card(resort_chosen)
 
 # Here we code the "Real Estate Advisor"
 if page == "🏡 Real Estate Advisor":
