@@ -319,10 +319,7 @@ def show_map(resorts, chances):
     # Hint:      folium with the swisstopo map, and streamlit_folium to show it and read the click.
     #            Bigger dot = more piste km, grey = no station, traffic light colors with dates.
     # Done when: clicking a dot opens that resort's card below the map.
-    if "selected_resort" not in st.session_state:
-        st.session_state.resort_chosen = None
-
-
+    
     map = folium.Map(location=[46.8, 8.2], zoom_start=7) # This is the longitude and latitude of the center of Switzerland, so that the map is centered when opened
 
     for index, resort in resorts.iterrows():
@@ -346,10 +343,6 @@ def show_map(resorts, chances):
 
     map_data = st_folium(map, width=None, height=600) # This code ensures the width and height of the map when displayed later on
 
-    st.session_state.resort_chosen = resort 
-    if st.session_state.resort_chosen is not None:
-        show_resort_card(st.session_state.resort_chosen)
-
     return None # Is this important?
 
     # Second problem: When the filter excludes some resorts, their circles are not displayed on the map. Is this as inteded or should those circles be red?
@@ -371,9 +364,13 @@ def show_resort_card(resort_chosen):
     pass
 
     # This first section of the code has been done with help from a explanation from Streamlit
-    if resort_chosen != {}:
-        st.subheader(f"Facts about {resort_chosen['name']}")
-        st.dataframe(resort_chosen)
+    if "resort_chosen" not in st.session_state:
+            st.session_state.resort_chosen = None
+
+    st.session_state.resort_chosen = resort 
+    if st.session_state.resort_chosen is not None:
+        show_resort_card(st.session_state.resort_chosen)
+    
 
     
 
