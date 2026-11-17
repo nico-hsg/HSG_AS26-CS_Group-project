@@ -336,7 +336,7 @@ def show_map(resorts, chances):
 
         folium.CircleMarker(
         location=[resort["lat"], resort["lon"]], # Based on the latitude and longitude of the resorts (given by the data code), the circles are placed on the map
-        radius = map_radius
+        radius = map_radius,
         popup=resort["name"],
         color="blue",
         fill=True
