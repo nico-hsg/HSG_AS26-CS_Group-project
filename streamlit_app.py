@@ -442,14 +442,23 @@ if page == "🏠 Home":
 
 # Here we code the highly important holidayplaner as our main service
 if page == "🎿 Holidayplanner":
+
     st.title("🎿 Holidayplanner")
+
     st.subheader(" This page helps you plan your Skiing trip based on the probability of great snow circumstances")
+
     starting_place, possible_cantons, max_travelminutes, travel_dates = show_sidebar()
+
     resorts = load_resorts()
+
     filtered_resorts = filter_resorts(resorts, possible_cantons, starting_place, max_travelminutes)
+
     st.write(f"{len(filtered_resorts)} of {len(resorts)} resorts match your filters.")
+
     show_map(filtered_resorts, chances=None)
-    show_resort_card(resort_chosen)
+    
+    if st.session_state.resort_chosen is not None: # As we only want to show resort information when the user clicks on a circle, this code is needed
+        show_resort_card(st.session_state.resort_chosen)
 
 # Here we code the "Real Estate Advisor"
 if page == "🏡 Real Estate Advisor":
