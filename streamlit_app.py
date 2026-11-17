@@ -169,8 +169,13 @@ def travel_time_minutes(starting_place, resort):
 
 
     # Anfrage senden; nach spätestens 15 Sekunden ohne Antwort abbrechen.
-    antwort = requests.get(url, params=parameter, timeout=15)
-    antwort.raise_for_status()
+    try:
+        antwort = requests.get(url, params=parameter, timeout=15)
+        antwort.raise_for_status()
+
+    except requests.exceptions.RequestException:
+        # Reisezeit unbekannt, wenn die Abfrage fehlschlägt.
+        return None
 
     # Die Antwort als Python-Daten einlesen.
     daten = antwort.json()
