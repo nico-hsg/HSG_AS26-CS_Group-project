@@ -321,7 +321,15 @@ def show_map(resorts, chances):
     #            Bigger dot = more piste km, grey = no station, traffic light colors with dates.
     # Done when: clicking a dot opens that resort's card below the map.
     pass
-    m = folium.Map(location=[45,10], zoom_start=5)
+    m = folium.Map(location=[46.8, 8.2], zoom_start=8) # This is the longitude and latitude of the center of Switzerland, so that the map is centered when opened
+    for index, resort in resorts.iterrows():
+        folium.CircleMarker(
+        location=[resort["lat"], resort["lon"]],
+        radius=5,
+        popup=resort["name"],
+        color="blue",
+        fill=True
+        ).add_to(m)
     
 
 
