@@ -342,7 +342,7 @@ def show_map(resorts, chances):
         fill=True
         ).add_to(m)
 
-map_data = st_folium(m, width=None, height=600) # This code ensures the width and height of the map when displayed later on
+    map_data = st_folium(m, width=None, height=600) # This code ensures the width and height of the map when displayed later on
     
 
 
