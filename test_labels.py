@@ -853,3 +853,756 @@ linked_resorts = link_stations_to_resorts(resorts, stations)
 # Show available columns and first five resorts
 print("Columns:", linked_resorts.columns.tolist())
 print(linked_resorts.head())
+
+
+
+# Test 38: Check which resorts use trained stations
+
+print("\nTEST 38: Supported ski resorts")
+
+# Keep resorts whose stations were used for training
+supported_resorts = linked_resorts[
+    linked_resorts["station_code"].isin(
+        app_model.snowproof_station_codes
+    )
+]
+
+# Show their names and stations
+print(supported_resorts[["name", "station_code"]])
+
+# Count how many resorts are supported
+print("Supported resorts:", len(supported_resorts))
+print("Total resorts:", len(linked_resorts))
+
+
+# Test 39: Show all resort-station connections
+
+print("\nTEST 39: All resort-station connections")
+
+print(
+    linked_resorts[
+        ["resort_id", "name", "station_code"]
+    ].to_string(index=False)
+)
+
+# Test 40: Check historical snow data for Laax station
+
+print("\nTEST 40: Snow data quality for FLI")
+
+# Load historical snow measurements
+fli_snow = load_snow_depth(
+    "FLI", "2015-01-01", "2024-12-31"
+)
+
+# Count all measurements
+print("Total measurements:", len(fli_snow))
+
+# Count missing snow depth values
+print(
+    "Missing measurements:",
+    fli_snow["snow_depth_cm"].isna().sum()
+)
+
+# Count available snow depth values
+print(
+    "Valid measurements:",
+    fli_snow["snow_depth_cm"].notna().sum()
+)
+
+
+# Test 41: Check valid ski weeks for FLI
+
+print("\nTEST 41: Valid ski weeks for FLI")
+
+# Create seven-day ski week labels
+fli_labels = label_good_weeks(fli_snow)
+
+# Count weeks with known and unknown results
+print("Total ski week windows:", len(fli_labels))
+
+print(
+    "Valid ski weeks:",
+    fli_labels["good_week"].notna().sum()
+)
+
+print(
+    "Unknown ski weeks:",
+    fli_labels["good_week"].isna().sum()
+)
+
+
+# Test 42: Check valid ski weeks per year for FLI
+
+print("\nTEST 42: Valid ski weeks by year")
+
+# Keep only weeks with a known label
+valid_fli_labels = fli_labels.dropna(subset=["good_week"])
+
+# Count valid weeks for each year
+print(
+    valid_fli_labels.groupby("year").size()
+)
+
+
+# Test 43: Prepare additional stations for data quality checks
+
+print("\nTEST 43: Additional station codes")
+
+# Get all assigned stations and remove duplicates
+additional_stations = linked_resorts["station_code"].dropna().unique()
+
+# Remove stations already used in our model
+additional_stations = [
+    code for code in additional_stations
+    if code not in app_model.snowproof_station_codes
+]
+
+print("Additional stations:", additional_stations)
+print("Number of additional stations:", len(additional_stations))
+
+
+# Test 44: Check snow data quality for all additional stations
+
+print("\nTEST 44: Snow data quality of additional stations")
+
+for code in additional_stations:
+
+    # Download or load historical measurements
+    snow = load_snow_depth(
+        code, "2015-01-01", "2023-12-31"
+    )
+
+    # Count available measurements
+    valid_days = snow["snow_depth_cm"].notna().sum()
+
+    # Create ski week labels
+    week_labels = label_good_weeks(snow)
+
+    # Count usable ski weeks
+    valid_weeks = week_labels["good_week"].notna().sum()
+
+    # Show the results for this station
+    print(
+        code,
+        "| Valid days:", valid_days,
+        "| Valid weeks:", valid_weeks
+    )
+
+
+# Test 45: Prepare labels from additional stations
+
+print("\nTEST 45: Prepare extended ML dataset")
+
+# Exclude the station without usable snow measurements
+usable_stations = [
+    code for code in additional_stations
+    if code != "SAF"
+]
+
+# Collect labels from the additional stations
+new_labels_list = []
+
+for code in usable_stations:
+
+    # Load snow measurements
+    snow = load_snow_depth(
+        code, "2015-01-01", "2023-12-31"
+    )
+
+    # Create good-week labels
+    labels = label_good_weeks(snow)
+
+    # Keep only labels with a known result
+    labels = labels.dropna(subset=["good_week"])
+
+    # Add the labels to our list
+    new_labels_list.append(labels)
+
+# Combine all additional station labels
+new_labels = pd.concat(new_labels_list, ignore_index=True)
+
+print("Additional stations:", len(usable_stations))
+print("Additional valid week labels:", len(new_labels))
+print("First five rows:")
+print(new_labels.head())
+
+
+# Test 46: Combine old and new ML labels
+
+print("\nTEST 46: Combine old and new labels")
+
+# Keep old labels whose seven-day window ends before 2024
+old_labels = ml_data[
+    ml_data["week_start"] + pd.Timedelta(days=6)
+    < pd.Timestamp("2024-01-01")
+][["station_code", "week_start", "year", "good_week"]].copy()
+
+# Combine the old and new station labels
+extended_labels = pd.concat(
+    [old_labels, new_labels],
+    ignore_index=True
+)
+
+# Check our combined dataset
+print("Old labels:", len(old_labels))
+print("New labels:", len(new_labels))
+print("Total labels:", len(extended_labels))
+print("Stations:", extended_labels["station_code"].nunique())
+print("Latest week start:", extended_labels["week_start"].max())
+
+
+# Test 47: Prepare features for extended Random Forest
+
+print("\nTEST 47: Prepare extended ML features")
+
+# Add station altitudes
+extended_ml_data = extended_labels.merge(
+    stations[["station_code", "altitude_m"]],
+    on="station_code",
+    how="inner"
+)
+
+# Extract month and day from the date
+extended_ml_data["month"] = extended_ml_data["week_start"].dt.month
+extended_ml_data["day"] = extended_ml_data["week_start"].dt.day
+
+# Check the results
+print("Total ML examples:", len(extended_ml_data))
+print("Number of stations:", extended_ml_data["station_code"].nunique())
+print("Missing altitudes:", extended_ml_data["altitude_m"].isna().sum())
+
+print("\nFirst five rows:")
+print(extended_ml_data.head())
+
+
+# Test 48: Split the extended dataset by year
+
+print("\nTEST 48: Training and validation split")
+
+# Training: weeks ending before 2022
+extended_train = extended_ml_data[
+    extended_ml_data["week_start"] + pd.Timedelta(days=6)
+    < pd.Timestamp("2022-01-01")
+].copy()
+
+# Validation: weeks starting in 2022 or 2023
+extended_val = extended_ml_data[
+    extended_ml_data["week_start"] >= pd.Timestamp("2022-01-01")
+].copy()
+
+print("Training examples:", len(extended_train))
+print("Validation examples:", len(extended_val))
+
+print("Training stations:", extended_train["station_code"].nunique())
+print("Validation stations:", extended_val["station_code"].nunique())
+
+print(
+    "Latest training week end:",
+    (extended_train["week_start"] + pd.Timedelta(days=6)).max()
+)
+
+print(
+    "Earliest validation week:",
+    extended_val["week_start"].min()
+)
+
+
+# Test 49: Find stations missing in validation
+
+print("\nTEST 49: Missing validation stations")
+
+train_station_codes = set(extended_train["station_code"])
+val_station_codes = set(extended_val["station_code"])
+
+missing_stations = train_station_codes - val_station_codes
+
+print("Stations without validation data:", missing_stations)
+
+# Show number of available examples per year
+for code in missing_stations:
+    print("\nStation:", code)
+    station_data = extended_ml_data[
+        extended_ml_data["station_code"] == code
+    ]
+    print(station_data.groupby("year").size())
+
+
+# Test 50: Train the extended Random Forest
+
+from sklearn.ensemble import RandomForestClassifier
+
+print("\nTEST 50: Train extended Random Forest")
+
+# The three inputs our model learns from
+features = ["altitude_m", "month", "day"]
+
+# Training inputs and correct answers
+X_extended_train = extended_train[features]
+y_extended_train = extended_train["good_week"].astype(int)
+
+# Create the Random Forest
+extended_rf = RandomForestClassifier(
+    n_estimators=100,
+    max_depth=6,
+    min_samples_leaf=20,
+    random_state=42
+)
+
+# Train the model
+extended_rf.fit(X_extended_train, y_extended_train)
+
+print("Extended Random Forest trained successfully!")
+print("Training examples:", len(X_extended_train))
+print("Training stations:", extended_train["station_code"].nunique())
+print("Number of trees:", extended_rf.n_estimators)
+
+
+# Test 51: Compare both Random Forest models
+
+from sklearn.metrics import accuracy_score, brier_score_loss
+
+print("\nTEST 51: Compare Random Forest models")
+
+features = ["altitude_m", "month", "day"]
+
+# Use exactly the same validation examples
+original_codes = ["ABO", "DAV", "ZER", "ARO", "WFJ"]
+
+common_val = extended_val[
+    extended_val["station_code"].isin(original_codes)
+].copy()
+
+X_common = common_val[features]
+y_common = common_val["good_week"].astype(int)
+
+# Predictions from the original Random Forest
+old_prob = rf_model.predict_proba(X_common)[:, 1]
+old_pred = (old_prob >= 0.5).astype(int)
+
+# Predictions from the extended Random Forest
+new_prob = extended_rf.predict_proba(X_common)[:, 1]
+new_pred = (new_prob >= 0.5).astype(int)
+
+print("Validation examples:", len(common_val))
+
+print("\nOriginal Random Forest (5 stations)")
+print("Accuracy:", round(accuracy_score(y_common, old_pred), 4))
+print("Brier Score:", round(brier_score_loss(y_common, old_prob), 4))
+
+print("\nExtended Random Forest (19 stations)")
+print("Accuracy:", round(accuracy_score(y_common, new_pred), 4))
+print("Brier Score:", round(brier_score_loss(y_common, new_prob), 4))
+
+
+# Test 52: Evaluate extended Random Forest on all stations
+
+print("\nTEST 52: Extended model on all validation stations")
+
+# Prepare validation inputs and actual results
+X_all_val = extended_val[features]
+y_all_val = extended_val["good_week"].astype(int)
+
+# Predict probabilities and classes
+all_prob = extended_rf.predict_proba(X_all_val)[:, 1]
+all_pred = (all_prob >= 0.5).astype(int)
+
+# Evaluate results
+print("Validation examples:", len(extended_val))
+print("Validation stations:", extended_val["station_code"].nunique())
+
+print("Accuracy:", round(accuracy_score(y_all_val, all_pred), 4))
+print("Brier Score:", round(brier_score_loss(y_all_val, all_prob), 4))
+
+
+# Test 53: Evaluate extended Random Forest per station
+
+print("\nTEST 53: Accuracy and Brier Score per station")
+
+# Create a copy of our validation data
+station_evaluation = extended_val.copy()
+
+# Add predictions and probabilities
+station_evaluation["prediction"] = all_pred
+station_evaluation["probability"] = all_prob
+
+# Evaluate every station separately
+for code, data in station_evaluation.groupby("station_code"):
+
+    accuracy = accuracy_score(
+        data["good_week"].astype(int),
+        data["prediction"]
+    )
+
+    brier = brier_score_loss(
+        data["good_week"].astype(int),
+        data["probability"]
+    )
+
+    print(
+        code,
+        "| Examples:", len(data),
+        "| Accuracy:", round(accuracy * 100, 1), "%",
+        "| Brier:", round(brier, 4)
+    )
+
+
+# Test 54: Compare extended Random Forest with station baseline
+
+print("\nTEST 54: Random Forest vs station baseline")
+
+# Historical good-week probability for each station
+station_probabilities = extended_train.groupby(
+    "station_code"
+)["good_week"].mean()
+
+# Assign historical probabilities to validation examples
+baseline_prob = extended_val["station_code"].map(
+    station_probabilities
+)
+
+# Turn probabilities into good/bad predictions
+baseline_pred = (baseline_prob >= 0.5).astype(int)
+
+# Compare the two methods
+print("Baseline Accuracy:",
+      round(accuracy_score(y_all_val, baseline_pred) * 100, 2), "%")
+
+print("Random Forest Accuracy:",
+      round(accuracy_score(y_all_val, all_pred) * 100, 2), "%")
+
+print("Baseline Brier Score:",
+      round(brier_score_loss(y_all_val, baseline_prob), 4))
+
+print("Random Forest Brier Score:",
+      round(brier_score_loss(y_all_val, all_prob), 4))
+
+
+# Test 55: Compare models on additional stations only
+
+print("\nTEST 55: New stations - baseline vs Random Forest")
+
+# Select validation examples from the additional stations
+new_station_mask = ~extended_val["station_code"].isin(original_codes)
+
+# Actual results for these examples
+y_new = y_all_val[new_station_mask]
+
+# Baseline predictions
+baseline_new_prob = baseline_prob[new_station_mask]
+baseline_new_pred = baseline_pred[new_station_mask]
+
+# Random Forest predictions
+rf_new_prob = all_prob[new_station_mask.to_numpy()]
+rf_new_pred = all_pred[new_station_mask.to_numpy()]
+
+print("Examples:", len(y_new))
+print("Stations:", extended_val.loc[new_station_mask, "station_code"].nunique())
+
+print("\nBaseline")
+print("Accuracy:", round(accuracy_score(y_new, baseline_new_pred) * 100, 2), "%")
+print("Brier:", round(brier_score_loss(y_new, baseline_new_prob), 4))
+
+print("\nRandom Forest")
+print("Accuracy:", round(accuracy_score(y_new, rf_new_pred) * 100, 2), "%")
+print("Brier:", round(brier_score_loss(y_new, rf_new_prob), 4))
+
+
+# Test 56: Random Forest with station identity
+
+from sklearn.compose import ColumnTransformer
+from sklearn.preprocessing import OneHotEncoder
+from sklearn.pipeline import Pipeline
+
+print("\nTEST 56: Random Forest with station identity")
+
+# Our new input features
+new_features = [
+    "altitude_m",
+    "month",
+    "day",
+    "station_code"
+]
+
+# Prepare training and validation inputs
+X_train_56 = extended_train[new_features]
+y_train_56 = extended_train["good_week"].astype(int)
+
+X_val_56 = extended_val[new_features]
+y_val_56 = extended_val["good_week"].astype(int)
+
+# Convert station codes into separate 0/1 columns
+preprocessor_56 = ColumnTransformer(
+    transformers=[
+        (
+            "station",
+            OneHotEncoder(handle_unknown="ignore"),
+            ["station_code"]
+        )
+    ],
+    remainder="passthrough"
+)
+
+# Create our Random Forest with the same settings
+rf_station = RandomForestClassifier(
+    n_estimators=100,
+    max_depth=6,
+    min_samples_leaf=20,
+    random_state=42
+)
+
+# Combine preprocessing and Random Forest
+station_pipeline = Pipeline([
+    ("preprocessing", preprocessor_56),
+    ("model", rf_station)
+])
+
+# Train the new model
+station_pipeline.fit(X_train_56, y_train_56)
+
+# Make predictions
+station_prob = station_pipeline.predict_proba(X_val_56)[:, 1]
+station_pred = station_pipeline.predict(X_val_56)
+
+# Evaluate the model
+print("Accuracy:",
+      round(accuracy_score(y_val_56, station_pred) * 100, 2), "%")
+
+print("Brier Score:",
+      round(brier_score_loss(y_val_56, station_prob), 4))
+
+print("Training stations:",
+      extended_train["station_code"].nunique())
+
+
+# Test 57: Seasonal historical baseline
+
+print("\nTEST 57: Seasonal historical baseline")
+
+# Calculate historical probability per station and month
+monthly_probabilities = extended_train.groupby(
+    ["station_code", "month"]
+)["good_week"].mean()
+
+# Calculate historical probability per station
+station_probabilities_57 = extended_train.groupby(
+    "station_code"
+)["good_week"].mean()
+
+# Prepare validation data
+seasonal_val = extended_val.copy()
+
+# Assign historical probabilities for matching station and month
+seasonal_val["seasonal_prob"] = [
+    monthly_probabilities.get(
+        (row.station_code, row.month),
+        station_probabilities_57[row.station_code]
+    )
+    for row in seasonal_val.itertuples()
+]
+
+# Convert probabilities to classifications
+seasonal_pred = (
+    seasonal_val["seasonal_prob"] >= 0.5
+).astype(int)
+
+# Compare predictions with actual results
+print("Validation examples:", len(seasonal_val))
+
+print("Seasonal Baseline Accuracy:",
+      round(accuracy_score(
+          seasonal_val["good_week"].astype(int),
+          seasonal_pred
+      ) * 100, 2), "%")
+
+print("Seasonal Baseline Brier Score:",
+      round(brier_score_loss(
+          seasonal_val["good_week"].astype(int),
+          seasonal_val["seasonal_prob"]
+      ), 4))
+
+print("\nRandom Forest with station identity")
+print("Accuracy:",
+      round(accuracy_score(y_val_56, station_pred) * 100, 2), "%")
+
+print("Brier Score:",
+      round(brier_score_loss(y_val_56, station_prob), 4))
+
+
+# Test 58: Compare Random Forest models per station
+
+print("\nTEST 58: Improvement from station identity")
+
+comparison_58 = extended_val.copy()
+
+# Predictions from old and new Random Forest
+comparison_58["old_prediction"] = all_pred
+comparison_58["new_prediction"] = station_pred
+
+for code, data in comparison_58.groupby("station_code"):
+
+    actual = data["good_week"].astype(int)
+
+    old_accuracy = accuracy_score(
+        actual, data["old_prediction"]
+    )
+
+    new_accuracy = accuracy_score(
+        actual, data["new_prediction"]
+    )
+
+    improvement = (new_accuracy - old_accuracy) * 100
+
+    print(
+        code,
+        "| Old:", round(old_accuracy * 100, 1), "%",
+        "| New:", round(new_accuracy * 100, 1), "%",
+        "| Change:", round(improvement, 1),
+        "percentage points"
+    )
+
+
+# Test 59: Understand predictions at selected stations
+
+print("\nTEST 59: Station predictions and actual snow conditions")
+
+# Add predictions to validation data
+analysis_59 = extended_val.copy()
+analysis_59["rf_prediction"] = station_pred
+analysis_59["rf_probability"] = station_prob
+
+# Investigate stations with interesting results
+selected_stations = ["ZER", "PON", "DAV", "MVE"]
+
+for code in selected_stations:
+
+    train_station = extended_train[
+        extended_train["station_code"] == code
+    ]
+
+    val_station = analysis_59[
+        analysis_59["station_code"] == code
+    ]
+
+    print("\nStation:", code)
+
+    print(
+        "Training: Actual good weeks:",
+        round(train_station["good_week"].mean() * 100, 1), "%"
+    )
+
+    print(
+        "Validation: Actual good weeks:",
+        round(val_station["good_week"].mean() * 100, 1), "%"
+    )
+
+    print(
+        "Validation: Predicted good weeks:",
+        round(val_station["rf_prediction"].mean() * 100, 1), "%"
+    )
+
+    print(
+        "Validation: Average predicted probability:",
+        round(val_station["rf_probability"].mean() * 100, 1), "%"
+    )
+
+    print(
+        "Validation Brier Score:",
+        round(
+            brier_score_loss(
+                val_station["good_week"].astype(int),
+                val_station["rf_probability"]
+            ),
+            4
+        )
+    )
+
+
+# Test 60: Random Forest vs baseline at selected stations
+
+print("\nTEST 60: Station baseline vs Random Forest")
+
+# Use the same validation data and predictions
+comparison_60 = extended_val.copy()
+
+comparison_60["rf_prob"] = station_prob
+comparison_60["baseline_prob"] = baseline_prob
+
+selected_stations = ["ZER", "PON", "DAV", "MVE"]
+
+for code in selected_stations:
+
+    data = comparison_60[
+        comparison_60["station_code"] == code
+    ]
+
+    actual = data["good_week"].astype(int)
+
+    baseline_brier = brier_score_loss(
+        actual,
+        data["baseline_prob"]
+    )
+
+    rf_brier = brier_score_loss(
+        actual,
+        data["rf_prob"]
+    )
+
+    print("\nStation:", code)
+    print("Baseline Brier:", round(baseline_brier, 4))
+    print("Random Forest Brier:", round(rf_brier, 4))
+
+    if rf_brier < baseline_brier:
+        print("Better model: Random Forest")
+    elif baseline_brier < rf_brier:
+        print("Better model: Baseline")
+    else:
+        print("Both models are equal")
+
+
+# Test 61: Compare Brier Scores across all stations
+
+print("\nTEST 61: Brier Score comparison for all stations")
+
+comparison_61 = extended_val.copy()
+
+comparison_61["rf_prob"] = station_prob
+comparison_61["baseline_prob"] = baseline_prob
+
+rf_wins = 0
+baseline_wins = 0
+
+for code, data in comparison_61.groupby("station_code"):
+
+    actual = data["good_week"].astype(int)
+
+    rf_brier = brier_score_loss(
+        actual,
+        data["rf_prob"]
+    )
+
+    baseline_brier = brier_score_loss(
+        actual,
+        data["baseline_prob"]
+    )
+
+    difference = baseline_brier - rf_brier
+
+    if difference > 0:
+        winner = "Random Forest"
+        rf_wins += 1
+    elif difference < 0:
+        winner = "Baseline"
+        baseline_wins += 1
+    else:
+        winner = "Tie"
+
+    print(
+        code,
+        "| Baseline:", round(baseline_brier, 4),
+        "| RF:", round(rf_brier, 4),
+        "| Difference:", round(difference, 4),
+        "| Winner:", winner
+    )
+
+print("\nRandom Forest wins:", rf_wins)
+print("Baseline wins:", baseline_wins)
