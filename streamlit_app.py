@@ -320,14 +320,14 @@ def show_map(resorts, chances):
     #            Bigger dot = more piste km, grey = no station, traffic light colors with dates.
     # Done when: clicking a dot opens that resort's card below the map.
     
-    m = folium.Map(location=[46.8, 8.2], zoom_start=8) # This is the longitude and latitude of the center of Switzerland, so that the map is centered when opened
+    m = folium.Map(location=[46.8, 8.2], zoom_start=7) # This is the longitude and latitude of the center of Switzerland, so that the map is centered when opened
 
     for index, resort in resorts.iterrows():
     
         # Calculation of the radius of the circle, so that users can directly see the size of the resorts on the map
         map_radius = resort["piste_km_total"] / 10
     
-        # This code ensures that the radius of the circle is not to big or to small, to ensure readability
+        # This code ensures that the radius of the circle is not to big or to small, to ensure readability. Current problem: When zooming in our out the size of the circles does not change, so that the circles are to big when zooming in and to small when zooming out. This needs to be fixed later on.
         if map_radius > 15:
             map_radius = 15
         elif map_radius < 5:
@@ -344,7 +344,8 @@ def show_map(resorts, chances):
     map_data = st_folium(m, width=None, height=600) # This code ensures the width and height of the map when displayed later on
 
     return None # Is this important?
-    
+
+    # Second problem: When the filter excludes some resorts, their circles are not displayed on the map. Is this as inteded or should those circles be red?
 
 
 
