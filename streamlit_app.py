@@ -412,6 +412,7 @@ if page == "🎿 Holidayplanner":
     starting_place, possible_cantons, max_travelminutes, travel_dates = show_sidebar()
     resorts = load_resorts()
     filtered_resorts = filter_resorts(resorts, possible_cantons, starting_place, max_travelminutes)
+    print(filtered_resorts)
     st.write("{len(filtered_resorts)} of {len(resorts)} resorts match your filters.")
 
 
