@@ -364,7 +364,7 @@ def show_resort_card(resort_chosen):
     pass
 
     # This first section of the code has been done with help from a explanation from Streamlit
-    st.session_state.resort_chosen = resort_chosen
+    resort_chosen = st.session_state.resort_chosen
     if resort_chosen != {}:
         st.subheader(f"Facts about {resort_chosen['name']}")
         st.dataframe(resort_chosen)
