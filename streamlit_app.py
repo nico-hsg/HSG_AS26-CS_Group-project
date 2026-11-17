@@ -413,7 +413,7 @@ def show_about_us():
     pass
 
 
-# The following section codes the user interface. Each Subsite of the overall website is divided by if page == xy
+# The following section codes the overall user interface. Each Subsite of the overall website is divided by if page == xy
 st.set_page_config(page_title="Snow-Proof", page_icon="🏔️", layout="wide")
 
 st.sidebar.title("🏔️ Snow-Proof")
@@ -456,9 +456,6 @@ if page == "🎿 Holidayplanner":
     st.write(f"{len(filtered_resorts)} of {len(resorts)} resorts match your filters.")
 
     show_map(filtered_resorts, chances=None)
-    
-    if st.session_state.resort_chosen is not None: # As we only want to show resort information when the user clicks on a circle, this code is needed
-        show_resort_card(st.session_state.resort_chosen)
 
 # Here we code the "Real Estate Advisor"
 if page == "🏡 Real Estate Advisor":
@@ -473,6 +470,7 @@ if page == "👥 About Us":
 # Website part: the order of everything on the page. This is the code that actually runs.
 # =============================================================================
 
+# This section was moved to nr. 5 by Noah
 
 # TODO [FABIO | Task 12]
 # Goal:      Call the functions above in the right order, so the page works from top to bottom.
