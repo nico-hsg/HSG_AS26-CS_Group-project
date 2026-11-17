@@ -322,20 +322,27 @@ def show_map(resorts, chances):
     # Done when: clicking a dot opens that resort's card below the map.
     pass
     m = folium.Map(location=[46.8, 8.2], zoom_start=8) # This is the longitude and latitude of the center of Switzerland, so that the map is centered when opened
+
     for index, resort in resorts.iterrows():
+    
+        # Calculation of the radius of the circle, so that users can directly see the size of the resorts on the map
+        map_radius = resort["piste_km"] / 10
+    
+        # This code ensures that the radius of the circle is not to big or to small, to ensure readability
+        if map_radius > 15:
+            map_radius = 15
+        elif map_radius < 5:
+            map_radius = 5 
+
         folium.CircleMarker(
-        location=[resort["lat"], resort["lon"]],
-        radius = resort["piste_km"] /10 # This codes changes the radius of the circle based on the piste km of each resort
-            if radius > 15:
-                radius = 15
-            elif radius < 5:
-                radius = 5 # This code ensures that the radius of the circle is not to big or to small, to ensure readability
+        location=[resort["lat"], resort["lon"]], # Based on the latitude and longitude of the resorts (given by the data code), the circles are placed on the map
+        radius = map_radius
         popup=resort["name"],
         color="blue",
         fill=True
         ).add_to(m)
 
-        map_data = st_folium(m, width=None, height=600) # This code ensures the width and height of the map when displayed later on
+map_data = st_folium(m, width=None, height=600) # This code ensures the width and height of the map when displayed later on
     
 
 
