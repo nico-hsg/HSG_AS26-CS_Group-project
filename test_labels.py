@@ -1,11 +1,13 @@
 import pandas as pd
 from data import load_snow_depth, load_stations
+from streamlit_app import train_model
 from sklearn.linear_model import LogisticRegression
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import accuracy_score, confusion_matrix
 from sklearn.metrics import brier_score_loss
 import numpy as np
 from sklearn.ensemble import RandomForestClassifier
+from data import load_resorts, link_stations_to_resorts
 
 def check_good_week(snow_depth):
 
@@ -727,3 +729,127 @@ print("Random Forest Recall:",
 print("Random Forest F1 Score:",
       f1_score(y_validation, rf_predictions))
 
+
+# Test 32: Check Random Forest accuracy for each station
+
+# Copy validation data and add model predictions
+station_results = validation_data.copy()
+station_results["prediction"] = rf_predictions
+
+# Check each station separately
+station_codes = ["ABO", "DAV", "ZER", "ARO", "WFJ"]
+
+for station_code in station_codes:
+
+    # Select only this station
+    station = station_results[
+        station_results["station_code"] == station_code
+    ]
+
+    # Compare predicted and actual results
+    accuracy = accuracy_score(
+        station["good_week"],
+        station["prediction"]
+    )
+
+    print("Station:", station_code)
+    print("Accuracy:", round(accuracy * 100, 1), "%")
+    print("------------------------")
+
+
+# Test 33: Compare actual and predicted good weeks by station
+
+for station_code in station_codes:
+
+    station = station_results[
+        station_results["station_code"] == station_code
+    ]
+
+    print("Station:", station_code)
+
+    # Actual good and bad weeks
+    print("Actual results:")
+    print(station["good_week"].value_counts())
+
+    # Predicted good and bad weeks
+    print("Model predictions:")
+    print(station["prediction"].value_counts())
+
+    print("------------------------")
+
+
+# Test 34: Compare Random Forest with a simple station rule
+
+baseline_predictions = []
+
+for _, week in validation_data.iterrows():
+
+    # Look at historical training weeks from the same station
+    station_history = train_data[
+        train_data["station_code"] == week["station_code"]
+    ]
+
+    # Was the majority of these weeks good?
+    average = station_history["good_week"].mean()
+
+    if average >= 0.5:
+        baseline_predictions.append(1)
+    else:
+        baseline_predictions.append(0)
+
+# Compare both methods
+baseline_accuracy = accuracy_score(
+    y_validation, baseline_predictions
+)
+
+print("Station baseline accuracy:",
+      round(baseline_accuracy * 100, 1), "%")
+
+print("Random Forest accuracy:",
+      round(rf_accuracy * 100, 1), "%")
+
+
+# Test 35: Train the model using the Streamlit function
+
+print("TEST 35: Training our model from streamlit_app.py")
+
+# Select the columns required by train_model()
+app_labels = ml_data[
+    ["station_code", "week_start", "year", "good_week"]
+].copy()
+
+# Train the model using our new function
+app_model = train_model(app_labels, stations)
+
+# Check whether training worked
+print("Model type:", type(app_model).__name__)
+print("Features:", app_model.feature_names_in_)
+print("Model trained successfully!")
+
+
+# Test 36: Check stored station information
+
+print("\nTEST 36: Stored station information")
+
+# Show which stations were used for training
+print("Trained stations:")
+print(app_model.snowproof_station_codes)
+
+# Show the altitude of each trained station
+print("Station altitudes:")
+print(app_model.snowproof_station_altitudes)
+
+
+# Test 37: Connect ski resorts to snow stations
+
+print("\nTEST 37: Resort and station connection")
+
+# Load ski resorts
+resorts = load_resorts()
+
+# Connect resorts with nearby snow stations
+linked_resorts = link_stations_to_resorts(resorts, stations)
+
+# Show available columns and first five resorts
+print("Columns:", linked_resorts.columns.tolist())
+print(linked_resorts.head())
