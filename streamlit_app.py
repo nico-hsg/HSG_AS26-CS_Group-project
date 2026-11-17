@@ -340,6 +340,7 @@ def show_map(resorts, chances):
         color = "blue", # Colors should be adjusted later on based on the snow conditions, but for now they are all blue
         fill = True # It should not only be a circle, but a filled circle for better visibility (especially for the colour) 
         ).add.to(map)
+
     map_data = st_folium(map, width=None, height=600) # This code ensures the width and height of the map when displayed later on
 
     return None # Is this important?
@@ -362,9 +363,11 @@ def show_resort_card(resort_chosen):
     # Done when: every resort shows its card, and resorts without a station show a warning.
     pass
 
-    resort_chosen = # Clicked resort, but how?
-    st.subheader(f"Facts about {resort_chosen['name']}")
-    st.dataframe(resort_chosen)
+    # This first section of the code has been done with help from a explanation from Streamlit
+    st.session_state.resort_chosen = resort_chosen
+    if resort_chosen != {}:
+        st.subheader(f"Facts about {resort_chosen['name']}")
+        st.dataframe(resort_chosen)
     
 
     
@@ -445,7 +448,7 @@ if page == "🎿 Holidayplanner":
     filtered_resorts = filter_resorts(resorts, possible_cantons, starting_place, max_travelminutes)
     st.write(f"{len(filtered_resorts)} of {len(resorts)} resorts match your filters.")
     show_map(filtered_resorts, chances=None)
-    show_resort_card(resort)
+    show_resort_card(resort_chosen)
 
 # Here we code the "Real Estate Advisor"
 if page == "🏡 Real Estate Advisor":
