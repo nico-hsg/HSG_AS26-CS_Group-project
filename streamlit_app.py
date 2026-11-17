@@ -416,8 +416,7 @@ if page == "🎿 Holidayplanner":
     filtered_resorts = filter_resorts(resorts, possible_cantons, starting_place, max_travelminutes)
     st.write(f"{len(filtered_resorts)} of {len(resorts)} resorts match your filters.")
     st.dataframe(filtered_resorts) # Must be replaced by the map once the code is finished
-    map_data = st_folium(m, width=None, height=600)
-
+    show_map(filtered_resorts, chances=None)
 
 # Here we code the "Real Estate Advisor"
 if page == "🏡 Real Estate Advisor":
