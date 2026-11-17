@@ -320,10 +320,6 @@ def show_map(resorts, chances):
     #            Bigger dot = more piste km, grey = no station, traffic light colors with dates.
     # Done when: clicking a dot opens that resort's card below the map.
     
-    # Initialize selected resort
-    if "resort_chosen" not in st.session_state:
-        st.session_state.resort_chosen = None
-
     map = folium.Map(location=[46.8, 8.2], zoom_start=7) # This is the longitude and latitude of the center of Switzerland, so that the map is centered when opened
 
     for index, resort in resorts.iterrows():
@@ -347,29 +343,6 @@ def show_map(resorts, chances):
 
     map_data = st_folium(map, width=None, height=600) # This code ensures the width and height of the map when displayed later on
 
-    # Check whether a marker was clicked
-    clicked = map_data.get("last_object_clicked")
-
-    if clicked is not None:
-
-        clicked_lat = clicked["lat"]
-        clicked_lon = clicked["lng"]
-
-        # Calculate distance between clicked point and all resorts
-        distances = (
-            (resorts["lat"] - clicked_lat) ** 2
-            + (resorts["lon"] - clicked_lon) ** 2
-        )
-
-        if not distances.empty:
-
-            closest_index = distances.idxmin()
-            closest_distance = distances.loc[closest_index]
-
-            # Select resort if click is close enough to its coordinates
-            if closest_distance < 0.00001:
-                st.session_state.resort_chosen = resorts.loc[closest_index]
-
     return None # Is this important?
 
     # Second problem: When the filter excludes some resorts, their circles are not displayed on the map. Is this as inteded or should those circles be red?
@@ -391,73 +364,13 @@ def show_resort_card(resort_chosen):
     pass
 
     # This first section of the code has been done with help from a explanation from Streamlit
+    if "resort_chosen" not in st.session_state:
+            st.session_state.resort_chosen = None
+
+    st.session_state.resort_chosen = resort 
+    if st.session_state.resort_chosen is not None:
+        show_resort_card(st.session_state.resort_chosen)
     
-    # Code form AI to test
-    st.divider()
-
-    # Display resort name
-    st.subheader(resort_chosen["name"])
-
-    st.write("### Resort information")
-
-    # Display main facts in two columns
-    col1, col2 = st.columns(2)
-
-    with col1:
-        st.metric(
-            "Total piste kilometres",
-            f'{resort_chosen["piste_km_total"]} km'
-        )
-
-        st.metric(
-            "Base altitude",
-            f'{resort_chosen["base_altitude_m"]} m'
-        )
-
-    with col2:
-        st.metric(
-            "Number of lifts",
-            resort_chosen["lifts"]
-        )
-
-        st.metric(
-            "Summit altitude",
-            f'{resort_chosen["summit_altitude_m"]} m'
-        )
-
-    # Display piste kilometres by difficulty
-    st.write("### Pistes by difficulty")
-
-    piste_data = {
-        "Difficulty": ["Blue", "Red", "Black"],
-        "Kilometres": [
-            resort_chosen["piste_km_blue"],
-            resort_chosen["piste_km_red"],
-            resort_chosen["piste_km_black"]
-        ]
-    }
-
-    piste_df = pd.DataFrame(piste_data)
-
-    st.bar_chart(
-        piste_df,
-        x="Difficulty",
-        y="Kilometres"
-    )
-
-    # Check whether a snow measurement station is available
-    if (
-        "station_code" not in resort_chosen.index
-        or pd.isna(resort_chosen["station_code"])
-    ):
-        st.warning(
-            "No snow measurement station is available for this resort."
-        )
-    else:
-        st.success(
-            "A snow measurement station is available for this resort."
-        )
-
 
     
 
@@ -544,10 +457,6 @@ if page == "🎿 Holidayplanner":
 
     show_map(filtered_resorts, chances=None)
 
-    # Display selected resort card
-    if st.session_state.resort_chosen is not None:
-        show_resort_card(st.session_state.resort_chosen)
-
 # Here we code the "Real Estate Advisor"
 if page == "🏡 Real Estate Advisor":
     st.title("🏡 Alpine Real Estate Advisor")
@@ -561,7 +470,7 @@ if page == "👥 About Us":
 # Website part: the order of everything on the page. This is the code that actually runs.
 # =============================================================================
 
-# This section was moved to nr. 5 by Noah
+# This section was moved to nr. 5 by Noah 
 
 # TODO [FABIO | Task 12]
 # Goal:      Call the functions above in the right order, so the page works from top to bottom.
