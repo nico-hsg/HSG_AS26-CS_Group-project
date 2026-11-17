@@ -329,7 +329,7 @@ def show_map(resorts, chances):
             if radius > 15:
                 radius = 15
             elif radius < 5:
-                radius = 5, # This code ensures that the radius of the circle is not to big or to small, to ensure readability
+                radius = 5 # This code ensures that the radius of the circle is not to big or to small, to ensure readability
         popup=resort["name"],
         color="blue",
         fill=True
