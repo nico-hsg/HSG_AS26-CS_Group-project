@@ -141,10 +141,10 @@ def predict_good_week(model, resort, start_date, end_date):
 # Website part: the filters in the sidebar and the ranked list below the map.
 # =============================================================================
 
-def travel_time_minutes(place, resort):
+def travel_time_minutes(starting_place, resort):
     """
     Goal:     How long the trip by public transport takes from the user's city / village.
-    Input:    place (e.g. "Zurich"), one resort
+    Input:    starting_place (e.g. "Zurich"), one resort with transport_stop
     Website:  "Travel time" in the resort card, and the travel time filter.
     Returns:  minutes, or nothing if the place is unknown
     """
@@ -152,18 +152,17 @@ def travel_time_minutes(place, resort):
     # Hint:      transport.opendata.ch ("/v1/connections"). Only ask for a city or village, no
     #            street address. Dates far in the future may give no answer: use a normal weekday.
     # Done when: Zurich to Davos gives roughly 2 to 2.5 hours.
-    start = place
-    ziel = resort["transport_stop"]
+    destination_stop = resort["transport_stop"]
 
     # Ohne Zielhaltestelle können wir keine Verbindung abfragen.
-    if pd.isna(ziel) or ziel == "":
+    if pd.isna(destination_stop) or destination_stop == "":
         return None
 
     # Verbindung vom Startort zur Zielhaltestelle des Skigebiets abfragen.
     url = "https://transport.opendata.ch/v1/connections"
     parameter = {
-        "from": start,
-        "to": ziel,
+        "from": starting_place,
+        "to": destination_stop,
         "transportations[]": ["train", "bus"],
         "limit": 1,
     }
@@ -183,7 +182,7 @@ def travel_time_minutes(place, resort):
     ankunft = verbindung ["to"] ["arrivalTimestamp"]
 
     minuten = (ankunft - abfahrt)//60 
-    return minuten 
+    return minuten
    
 
 
@@ -202,7 +201,7 @@ def school_holidays(canton):
     pass
 
 
-def filter_resorts(resorts, cantons, place, max_minutes):
+def filter_resorts(resorts, possible_cantons, starting_place, max_travelminutes):
     """
     Goal:     Keep only the resorts that match the user's filters. All filters are optional.
     Input:    the resorts, the chosen cantons, the city / village, the max travel time
@@ -215,10 +214,18 @@ def filter_resorts(resorts, cantons, place, max_minutes):
     filtered = resorts.copy()
 
     # Nur Skigebiete aus den ausgewählten Kantonen behalten.
-    if cantons:
-        filtered = filtered[filtered["canton"].isin(cantons)]
+    if possible_cantons:
+        filtered = filtered[filtered["canton"].isin(possible_cantons)]
+    
+    if starting_place:
+        passende_resorts =[]
+        for index, resort in filtered.iterrows():
+            minuten = travel_time_minutes(starting_place, resort) 
+            if minuten is not None:
+                 if minuten <= max_travelminutes: 
+                    passende_resorts.append(index)
+    filtered = filtered.loc[passende_resorts ]
 
-    # TODO: Den Reisezeitfilter ergänze ich im nächsten Schritt.
     return filtered
 
 
