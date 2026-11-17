@@ -341,6 +341,8 @@ def show_map(resorts, chances):
         fill = True # It should not only be a circle, but a filled circle for better visibility (especially for the colour) 
         ).add_to(map)
 
+    resort_chosen = st.session_state.resort_chosen
+
     map_data = st_folium(map, width=None, height=600) # This code ensures the width and height of the map when displayed later on
 
     return None # Is this important?
@@ -364,7 +366,6 @@ def show_resort_card(resort_chosen):
     pass
 
     # This first section of the code has been done with help from a explanation from Streamlit
-    resort_chosen = st.session_state.resort_chosen
     if resort_chosen != {}:
         st.subheader(f"Facts about {resort_chosen['name']}")
         st.dataframe(resort_chosen)
