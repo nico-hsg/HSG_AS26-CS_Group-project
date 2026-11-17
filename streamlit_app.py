@@ -320,7 +320,7 @@ def show_map(resorts, chances):
     #            Bigger dot = more piste km, grey = no station, traffic light colors with dates.
     # Done when: clicking a dot opens that resort's card below the map.
     
-    m = folium.Map(location=[46.8, 8.2], zoom_start=7) # This is the longitude and latitude of the center of Switzerland, so that the map is centered when opened
+    map = folium.Map(location=[46.8, 8.2], zoom_start=7) # This is the longitude and latitude of the center of Switzerland, so that the map is centered when opened
 
     for index, resort in resorts.iterrows():
     
@@ -336,12 +336,11 @@ def show_map(resorts, chances):
         folium.CircleMarker(
         location=[resort["lat"], resort["lon"]], # Based on the latitude and longitude of the resorts (given by the data code), the circles are placed on the map
         radius = map_radius,
-        popup=resort["name"], # This code displays the name of the resort when clicking on it's circle on the map
-        color="blue", # Colors should be adjusted later on based on the snow conditions, but for now they are all blue
-        fill=True
-        ).add_to(m)
-
-    map_data = st_folium(m, width=None, height=600) # This code ensures the width and height of the map when displayed later on
+        popup = resort["name"], # This code displays the name of the resort when clicking on it's circle on the map
+        color = "blue", # Colors should be adjusted later on based on the snow conditions, but for now they are all blue
+        fill = True # It should not only be a circle, but a filled circle for better visibility (especially for the colour) 
+        )add.to(map)
+    map_data = st_folium(map, width=None, height=600) # This code ensures the width and height of the map when displayed later on
 
     return None # Is this important?
 
@@ -349,7 +348,7 @@ def show_map(resorts, chances):
 
 
 
-def show_resort_card(resort):
+def show_resort_card(resort_chosen):
     """
     Goal:     The facts of the clicked resort.
     Input:    one resort
@@ -362,9 +361,10 @@ def show_resort_card(resort):
     #            st.session_state remembers the clicked resort between clicks.
     # Done when: every resort shows its card, and resorts without a station show a warning.
     pass
-    
-    st.subheader(f"Facts about {resort['name']}")
-    st.dataframe()
+
+    resort_chosen = # Clicked resort, but how?
+    st.subheader(f"Facts about {resort_chosen['name']}")
+    st.dataframe(resort_chosen)
     
 
     
