@@ -224,7 +224,7 @@ def filter_resorts(resorts, possible_cantons, starting_place, max_travelminutes)
             if minuten is not None:
                  if minuten <= max_travelminutes: 
                     passende_resorts.append(index)
-    filtered = filtered.loc[passende_resorts ]
+        filtered = filtered.loc[passende_resorts ]
 
     return filtered
 
