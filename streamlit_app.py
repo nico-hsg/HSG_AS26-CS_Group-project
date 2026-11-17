@@ -339,7 +339,7 @@ def show_map(resorts, chances):
         popup = resort["name"], # This code displays the name of the resort when clicking on it's circle on the map
         color = "blue", # Colors should be adjusted later on based on the snow conditions, but for now they are all blue
         fill = True # It should not only be a circle, but a filled circle for better visibility (especially for the colour) 
-        )add.to(map)
+        ).add.to(map)
     map_data = st_folium(map, width=None, height=600) # This code ensures the width and height of the map when displayed later on
 
     return None # Is this important?
