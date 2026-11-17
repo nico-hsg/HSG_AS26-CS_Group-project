@@ -410,6 +410,9 @@ if page == "🎿 Holidayplanner":
     st.title("🎿 Holidayplanner")
     st.subheader(" This page helps you plan your Skiing trip based on the probability of great snow circumstances")
     starting_place, possible_cantons, max_travelminutes, travel_dates = show_sidebar()
+    resorts = load_resorts()
+    filtered_resorts = filter_resorts(resorts, possible_cantons, starting_place, max_travelminutes)
+    st.write("{len(filtered_resorts)} of {len(resorts)} resorts match your filters.")
 
 
 # Here we code the "Real Estate Advisor"
