@@ -325,11 +325,17 @@ def show_map(resorts, chances):
     for index, resort in resorts.iterrows():
         folium.CircleMarker(
         location=[resort["lat"], resort["lon"]],
-        radius=5,
+        radius = resort["piste_km"] /10 # This codes changes the radius of the circle based on the piste km of each resort
+            if radius > 15:
+                radius = 15
+            elif radius < 5:
+                radius = 5, # This code ensures that the radius of the circle is not to big or to small, to ensure readability
         popup=resort["name"],
         color="blue",
         fill=True
         ).add_to(m)
+
+        map_data = st_folium(m, width=None, height=600) # This code ensures the width and height of the map when displayed later on
     
 
 
