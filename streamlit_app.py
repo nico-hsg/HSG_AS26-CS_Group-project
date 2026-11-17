@@ -298,7 +298,7 @@ def show_sidebar():
     max_travelminutes = st.sidebar.slider(
         "Maximum time (in minutes) you are willing to travel",
         min_value=30,
-        max_value=300,
+        max_value=300, # Should this be incresed later on? talk to jan
         step=15
     )
 
@@ -321,6 +321,8 @@ def show_map(resorts, chances):
     #            Bigger dot = more piste km, grey = no station, traffic light colors with dates.
     # Done when: clicking a dot opens that resort's card below the map.
     pass
+    m = folium.Map(location=[45,10], zoom_start=5)
+    
 
 
 
@@ -413,7 +415,8 @@ if page == "🎿 Holidayplanner":
     resorts = load_resorts()
     filtered_resorts = filter_resorts(resorts, possible_cantons, starting_place, max_travelminutes)
     st.write(f"{len(filtered_resorts)} of {len(resorts)} resorts match your filters.")
-    st.dataframe(filtered_resorts)
+    st.dataframe(filtered_resorts) # Must be replaced by the map once the code is finished
+    map_data = st_folium(m, width=None, height=600)
 
 
 # Here we code the "Real Estate Advisor"
