@@ -278,8 +278,7 @@ def show_sidebar():
     # TODO [NOAH+JAN | Task 10]
     # Hint:      st.sidebar with text input, multiselect, slider and date input.
     # Done when: changing a filter changes what the map shows.
-    pass
-
+    
     st.sidebar.subheader("Filters for your trip")
 
     # Starting location with which we calculate the travel time
@@ -320,13 +319,13 @@ def show_map(resorts, chances):
     # Hint:      folium with the swisstopo map, and streamlit_folium to show it and read the click.
     #            Bigger dot = more piste km, grey = no station, traffic light colors with dates.
     # Done when: clicking a dot opens that resort's card below the map.
-    pass
+    
     m = folium.Map(location=[46.8, 8.2], zoom_start=8) # This is the longitude and latitude of the center of Switzerland, so that the map is centered when opened
 
     for index, resort in resorts.iterrows():
     
         # Calculation of the radius of the circle, so that users can directly see the size of the resorts on the map
-        map_radius = resort["piste_km"] / 10
+        map_radius = resort["piste_km_total"] / 10
     
         # This code ensures that the radius of the circle is not to big or to small, to ensure readability
         if map_radius > 15:
@@ -338,11 +337,13 @@ def show_map(resorts, chances):
         location=[resort["lat"], resort["lon"]], # Based on the latitude and longitude of the resorts (given by the data code), the circles are placed on the map
         radius = map_radius,
         popup=resort["name"],
-        color="blue",
+        color="blue", # Colors should be adjusted later on based on the snow conditions, but for now they are all blue
         fill=True
         ).add_to(m)
 
     map_data = st_folium(m, width=None, height=600) # This code ensures the width and height of the map when displayed later on
+
+    return None # Is this important?
     
 
 
