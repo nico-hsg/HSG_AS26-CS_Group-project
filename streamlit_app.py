@@ -336,7 +336,7 @@ def show_map(resorts, chances):
         folium.CircleMarker(
         location=[resort["lat"], resort["lon"]], # Based on the latitude and longitude of the resorts (given by the data code), the circles are placed on the map
         radius = map_radius,
-        popup=resort_chosen["name"], # This code displays the name of the resort when clicking on it's circle on the map
+        popup=resort["name"], # This code displays the name of the resort when clicking on it's circle on the map
         color="blue", # Colors should be adjusted later on based on the snow conditions, but for now they are all blue
         fill=True
         ).add_to(m)
@@ -349,7 +349,7 @@ def show_map(resorts, chances):
 
 
 
-def show_resort_card(resort_chosen):
+def show_resort_card(resort):
     """
     Goal:     The facts of the clicked resort.
     Input:    one resort
@@ -363,7 +363,7 @@ def show_resort_card(resort_chosen):
     # Done when: every resort shows its card, and resorts without a station show a warning.
     pass
     
-    st.subheader(f"Facts about {resort_chosen['name']}")
+    st.subheader(f"Facts about {resort['name']}")
     st.dataframe()
     
 
