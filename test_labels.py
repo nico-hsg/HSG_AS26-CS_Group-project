@@ -1606,3 +1606,846 @@ for code, data in comparison_61.groupby("station_code"):
 
 print("\nRandom Forest wins:", rf_wins)
 print("Baseline wins:", baseline_wins)
+
+
+# Test 62: Detailed data quality check for FIO
+
+print("\nTEST 62: Detailed snow data quality for FIO")
+
+fio_snow = load_snow_depth(
+    "FIO", "2015-01-01", "2023-12-31"
+)
+
+fio_snow = fio_snow.sort_values("date").copy()
+
+print("Total rows:", len(fio_snow))
+
+print(
+    "Valid snow measurements:",
+    fio_snow["snow_depth_cm"].notna().sum()
+)
+
+print(
+    "Missing snow measurements:",
+    fio_snow["snow_depth_cm"].isna().sum()
+)
+
+print(
+    "Duplicate dates:",
+    fio_snow["date"].duplicated().sum()
+)
+
+# Detect calendar gaps
+date_gaps = fio_snow["date"].diff().dropna()
+
+print(
+    "Gaps longer than one day:",
+    (date_gaps > pd.Timedelta(days=1)).sum()
+)
+
+# Check valid weeks by year
+fio_weeks = label_good_weeks(fio_snow)
+
+valid_fio_weeks = fio_weeks.dropna(
+    subset=["good_week"]
+)
+
+print("\nValid weeks per year:")
+print(valid_fio_weeks.groupby("year").size())
+
+# Show daily coverage and missing values by year
+fio_snow["year"] = fio_snow["date"].dt.year
+
+print("\nMeasurements per year:")
+print(
+    fio_snow.groupby("year")["snow_depth_cm"]
+    .agg(
+        total_days="size",
+        valid_days="count"
+    )
+)
+
+
+# Test 63: Check missing measurements by month
+
+print("\nTEST 63: Missing snow measurements by month")
+
+# Use the FIO data already loaded in Test 62
+monthly_quality = fio_snow.copy()
+
+# Extract month from each date
+monthly_quality["month"] = monthly_quality["date"].dt.month
+
+# Count valid and missing measurements per month
+monthly_summary = monthly_quality.groupby("month")[
+    "snow_depth_cm"
+].agg(
+    total_days="size",
+    valid_days="count"
+)
+
+monthly_summary["missing_days"] = (
+    monthly_summary["total_days"] -
+    monthly_summary["valid_days"]
+)
+
+monthly_summary["coverage_percent"] = (
+    monthly_summary["valid_days"] /
+    monthly_summary["total_days"] * 100
+).round(1)
+
+print(monthly_summary)
+
+
+# Test 64: Preserve average snow depth for each week
+
+print("\nTEST 64: Average snow depth per week")
+
+def label_weeks_with_snow_depth(snow_data):
+
+    snow_data = snow_data.sort_values(
+        ["station_code", "date"]
+    )
+
+    results = []
+
+    for station, station_data in snow_data.groupby("station_code"):
+
+        station_data = station_data.reset_index(drop=True)
+
+        for i in range(len(station_data) - 6):
+
+            week_data = station_data.iloc[i:i+7]
+
+            # Check for seven consecutive calendar days
+            date_differences = (
+                week_data["date"].diff().dropna()
+            )
+
+            if not (
+                date_differences == pd.Timedelta(days=1)
+            ).all():
+                continue
+
+            # Only use weeks fully within December-April
+            if not week_data["date"].dt.month.isin(
+                [12, 1, 2, 3, 4]
+            ).all():
+                continue
+
+            snow_values = week_data["snow_depth_cm"]
+
+            # Do not calculate averages with missing values
+            if snow_values.isna().any():
+                average_snow = np.nan
+                good_week = np.nan
+            else:
+                average_snow = snow_values.mean()
+                good_week = int(average_snow >= 50)
+
+            results.append({
+                "station_code": station,
+                "week_start": week_data["date"].iloc[0],
+                "average_snow_depth_cm": average_snow,
+                "good_week": good_week
+            })
+
+    return pd.DataFrame(results)
+
+
+# Check the function using real Davos measurements
+snow_64 = load_snow_depth(
+    "DAV", "2020-02-01", "2020-02-29"
+)
+
+labels_64 = label_weeks_with_snow_depth(snow_64)
+
+print(labels_64.head(10).to_string(index=False))
+
+print("\nValid weeks:", labels_64["good_week"].notna().sum())
+
+print(
+    "Missing snow averages:",
+    labels_64["average_snow_depth_cm"].isna().sum()
+)
+
+print(
+    "Average snow depth range:",
+    round(labels_64["average_snow_depth_cm"].min(), 1),
+    "to",
+    round(labels_64["average_snow_depth_cm"].max(), 1),
+    "cm"
+)
+
+# Compare with our original label function
+old_labels_64 = label_good_weeks(snow_64)
+
+same_labels = (
+    labels_64["good_week"].fillna(-1).reset_index(drop=True)
+    ==
+    old_labels_64["good_week"].fillna(-1).reset_index(drop=True)
+).all()
+
+print("Labels match original function:", same_labels)
+
+
+# Test 65: Historical monthly snow depth without future data
+
+print("\nTEST 65: Historical monthly snow depth")
+
+# Load historical daily snow measurements for Davos
+snow_65 = load_snow_depth(
+    "DAV", "2015-01-01", "2023-12-31"
+)
+
+# Keep February measurements only
+february_65 = snow_65[
+    snow_65["date"].dt.month == 2
+].copy()
+
+# Extract year
+february_65["year"] = february_65["date"].dt.year
+
+# Calculate average February snow depth for each year
+yearly_february = february_65.groupby(
+    "year"
+)["snow_depth_cm"].mean()
+
+print("\nAverage February snow depth per year:")
+print(yearly_february.round(1))
+
+# For each year, calculate the average using
+# only the previous years
+for prediction_year in range(2016, 2024):
+
+    previous_years = yearly_february[
+        yearly_february.index < prediction_year
+    ]
+
+    if len(previous_years) == 0:
+        continue
+
+    historical_average_cm = previous_years.mean()
+
+    print(
+        "Prediction year:", prediction_year,
+        "| Historical February average:",
+        round(historical_average_cm, 1), "cm",
+        "| Years used:",
+        list(previous_years.index)
+    )
+
+
+# Test 66: Add historical snow depth to Random Forest
+
+print("\nTEST 66: Random Forest with historical snow depth")
+
+# STEP 1: Load historical snow measurements (2015-2021)
+monthly_data_66 = []
+
+for code in sorted(extended_train["station_code"].unique()):
+
+    snow = load_snow_depth(
+        code, "2015-01-01", "2021-12-31"
+    )
+
+    snow = snow.copy()
+    snow["year"] = snow["date"].dt.year
+    snow["month"] = snow["date"].dt.month
+
+    # One average per station, year and month
+    monthly = (
+        snow.groupby(["year", "month"])["snow_depth_cm"]
+        .mean()
+        .dropna()
+        .reset_index()
+    )
+
+    monthly["station_code"] = code
+    monthly_data_66.append(monthly)
+
+monthly_snow_66 = pd.concat(
+    monthly_data_66, ignore_index=True
+)
+
+print("Historical monthly records:", len(monthly_snow_66))
+
+
+# STEP 2: Calculate historical features without leakage
+
+history_lookup_66 = {}
+
+for code in monthly_snow_66["station_code"].unique():
+
+    for month in [12, 1, 2, 3, 4]:
+
+        station_month = monthly_snow_66[
+            (monthly_snow_66["station_code"] == code) &
+            (monthly_snow_66["month"] == month)
+        ]
+
+        for prediction_year in range(2015, 2024):
+
+            # Validation uses only training years
+            cutoff = min(prediction_year, 2022)
+
+            past = station_month[
+                station_month["year"] < cutoff
+            ]
+
+            if len(past) > 0:
+                historical_cm = past["snow_depth_cm"].mean()
+            else:
+                historical_cm = np.nan
+
+            history_lookup_66[
+                (code, month, prediction_year)
+            ] = historical_cm
+
+
+# STEP 3: Add feature to training and validation data
+
+train_66 = extended_train.copy()
+val_66 = extended_val.copy()
+
+for dataset in [train_66, val_66]:
+
+    dataset["historical_snow_depth_cm"] = [
+        history_lookup_66.get(
+            (row.station_code, row.month, row.year),
+            np.nan
+        )
+        for row in dataset.itertuples()
+    ]
+
+# Remove examples without historical information
+train_66 = train_66.dropna(
+    subset=["historical_snow_depth_cm"]
+)
+
+val_66 = val_66.dropna(
+    subset=["historical_snow_depth_cm"]
+)
+
+print("Training examples:", len(train_66))
+print("Validation examples:", len(val_66))
+
+print("\nExample historical features:")
+print(
+    val_66[
+        (val_66["station_code"] == "DAV") &
+        (val_66["month"] == 2)
+    ][
+        ["station_code", "week_start",
+         "historical_snow_depth_cm"]
+    ].head(3).to_string(index=False)
+)
+
+
+# STEP 4: Compare both models on the same data
+
+old_features_66 = [
+    "altitude_m", "month", "day", "station_code"
+]
+
+new_features_66 = old_features_66 + [
+    "historical_snow_depth_cm"
+]
+
+y_train_66 = train_66["good_week"].astype(int)
+y_val_66 = val_66["good_week"].astype(int)
+
+def create_model_66():
+
+    preprocessing = ColumnTransformer(
+        transformers=[
+            (
+                "station",
+                OneHotEncoder(handle_unknown="ignore"),
+                ["station_code"]
+            )
+        ],
+        remainder="passthrough"
+    )
+
+    forest = RandomForestClassifier(
+        n_estimators=100,
+        max_depth=6,
+        min_samples_leaf=20,
+        random_state=42
+    )
+
+    return Pipeline([
+        ("preprocessing", preprocessing),
+        ("model", forest)
+    ])
+
+
+# Old model: without historical snow depth
+old_model_66 = create_model_66()
+
+old_model_66.fit(
+    train_66[old_features_66],
+    y_train_66
+)
+
+old_prob_66 = old_model_66.predict_proba(
+    val_66[old_features_66]
+)[:, 1]
+
+
+# New model: with historical snow depth
+new_model_66 = create_model_66()
+
+new_model_66.fit(
+    train_66[new_features_66],
+    y_train_66
+)
+
+new_prob_66 = new_model_66.predict_proba(
+    val_66[new_features_66]
+)[:, 1]
+
+
+# STEP 5: Evaluate both models
+
+for name, probabilities in [
+    ("Old RF", old_prob_66),
+    ("New RF", new_prob_66)
+]:
+
+    predictions = (probabilities >= 0.5).astype(int)
+
+    print("\n", name)
+    print(
+        "Accuracy:",
+        round(accuracy_score(y_val_66, predictions) * 100, 2),
+        "%"
+    )
+    print(
+        "Brier Score:",
+        round(brier_score_loss(y_val_66, probabilities), 4)
+    )
+
+print(
+    "\nBrier improvement:",
+    round(
+        brier_score_loss(y_val_66, old_prob_66) -
+        brier_score_loss(y_val_66, new_prob_66),
+        4
+    )
+)
+
+
+# Test 67: Compare model probabilities per station
+
+print("\nTEST 67: Model comparison per station")
+
+comparison_67 = val_66.copy()
+
+comparison_67["old_rf_prob"] = old_prob_66
+comparison_67["new_rf_prob"] = new_prob_66
+
+# Baseline trained on the same training examples
+station_baseline_67 = train_66.groupby(
+    "station_code"
+)["good_week"].mean()
+
+comparison_67["baseline_prob"] = (
+    comparison_67["station_code"]
+    .map(station_baseline_67)
+)
+
+print("\nBrier Scores by station:")
+
+new_rf_wins = 0
+old_rf_wins = 0
+
+for code, data in comparison_67.groupby("station_code"):
+
+    actual = data["good_week"].astype(int)
+
+    old_brier = brier_score_loss(
+        actual, data["old_rf_prob"]
+    )
+
+    new_brier = brier_score_loss(
+        actual, data["new_rf_prob"]
+    )
+
+    baseline_brier = brier_score_loss(
+        actual, data["baseline_prob"]
+    )
+
+    if new_brier < old_brier:
+        winner = "New RF"
+        new_rf_wins += 1
+    elif old_brier < new_brier:
+        winner = "Old RF"
+        old_rf_wins += 1
+    else:
+        winner = "Tie"
+
+    print(
+        code,
+        "| Old RF:", round(old_brier, 4),
+        "| New RF:", round(new_brier, 4),
+        "| Baseline:", round(baseline_brier, 4),
+        "| Winner:", winner
+    )
+
+print("\nNew RF wins:", new_rf_wins)
+print("Old RF wins:", old_rf_wins)
+
+print("\nOverall baseline Brier:",
+      round(brier_score_loss(
+          comparison_67["good_week"].astype(int),
+          comparison_67["baseline_prob"]
+      ), 4))
+
+
+# Test 68: Model performance by validation year
+
+print("\nTEST 68: Random Forest performance by year")
+
+results_68 = extended_val.copy()
+
+# Predictions from Test 56
+results_68["rf_probability"] = station_prob
+results_68["rf_prediction"] = station_pred
+
+# Historical baseline from Test 54
+results_68["baseline_probability"] = baseline_prob
+
+for year, data in results_68.groupby("year"):
+
+    actual = data["good_week"].astype(int)
+
+    rf_accuracy = accuracy_score(
+        actual, data["rf_prediction"]
+    )
+
+    rf_brier = brier_score_loss(
+        actual, data["rf_probability"]
+    )
+
+    baseline_brier = brier_score_loss(
+        actual, data["baseline_probability"]
+    )
+
+    print("\nYear:", year)
+    print("Examples:", len(data))
+    print("Actual good weeks:", round(actual.mean() * 100, 1), "%")
+    print("RF Accuracy:", round(rf_accuracy * 100, 2), "%")
+    print("RF Brier Score:", round(rf_brier, 4))
+    print("Baseline Brier Score:", round(baseline_brier, 4))
+
+
+# Test 69: Check whether our model overestimates snow reliability
+
+print("\nTEST 69: Predicted vs actual good weeks by year")
+
+results_69 = extended_val.copy()
+
+# Probabilities from our Random Forest in Test 56
+results_69["rf_probability"] = station_prob
+
+# Historical probabilities from the station baseline
+results_69["baseline_probability"] = baseline_prob
+
+for year, data in results_69.groupby("year"):
+
+    actual_good = data["good_week"].mean() * 100
+
+    rf_expected = data["rf_probability"].mean() * 100
+
+    baseline_expected = (
+        data["baseline_probability"].mean() * 100
+    )
+
+    print("\nYear:", year)
+
+    print(
+        "Actually good weeks:",
+        round(actual_good, 2), "%"
+    )
+
+    print(
+        "RF average predicted probability:",
+        round(rf_expected, 2), "%"
+    )
+
+    print(
+        "Baseline average predicted probability:",
+        round(baseline_expected, 2), "%"
+    )
+
+    print(
+        "RF overestimation:",
+        round(rf_expected - actual_good, 2),
+        "percentage points"
+    )
+
+
+# Test 70: Walk-forward validation across four years
+
+print("\nTEST 70: Walk-forward validation")
+
+features_70 = [
+    "altitude_m", "month", "day", "station_code"
+]
+
+for test_year in [2020, 2021, 2022, 2023]:
+
+    year_start = pd.Timestamp(f"{test_year}-01-01")
+    next_year = pd.Timestamp(f"{test_year + 1}-01-01")
+
+    # Training weeks must end before the test year
+    train_70 = extended_ml_data[
+        extended_ml_data["week_start"] +
+        pd.Timedelta(days=6) < year_start
+    ].copy()
+
+    # Test weeks must be fully within the test year
+    test_70 = extended_ml_data[
+        (extended_ml_data["week_start"] >= year_start) &
+        (
+            extended_ml_data["week_start"] +
+            pd.Timedelta(days=6) < next_year
+        )
+    ].copy()
+
+    # Only evaluate stations present in training
+    test_70 = test_70[
+        test_70["station_code"].isin(
+            train_70["station_code"].unique()
+        )
+    ].copy()
+
+    X_train = train_70[features_70]
+    y_train = train_70["good_week"].astype(int)
+
+    X_test = test_70[features_70]
+    y_test = test_70["good_week"].astype(int)
+
+    preprocessing = ColumnTransformer(
+        transformers=[
+            (
+                "station",
+                OneHotEncoder(handle_unknown="ignore"),
+                ["station_code"]
+            )
+        ],
+        remainder="passthrough"
+    )
+
+    forest = RandomForestClassifier(
+        n_estimators=100,
+        max_depth=6,
+        min_samples_leaf=20,
+        random_state=42
+    )
+
+    model_70 = Pipeline([
+        ("preprocessing", preprocessing),
+        ("model", forest)
+    ])
+
+    model_70.fit(X_train, y_train)
+
+    rf_prob = model_70.predict_proba(X_test)[:, 1]
+    rf_pred = (rf_prob >= 0.5).astype(int)
+
+    # Historical baseline from training years only
+    station_history = train_70.groupby(
+        "station_code"
+    )["good_week"].mean()
+
+    baseline_prob = test_70["station_code"].map(
+        station_history
+    )
+
+    print("\nYear:", test_year)
+    print("Training examples:", len(train_70))
+    print("Test examples:", len(test_70))
+
+    print(
+        "RF Accuracy:",
+        round(accuracy_score(y_test, rf_pred) * 100, 2),
+        "%"
+    )
+
+    print(
+        "RF Brier:",
+        round(brier_score_loss(y_test, rf_prob), 4)
+    )
+
+    print(
+        "Baseline Brier:",
+        round(brier_score_loss(y_test, baseline_prob), 4)
+    )
+
+    print(
+        "Actual good weeks:",
+        round(y_test.mean() * 100, 2),
+        "%"
+    )
+
+
+# Test 71: Walk-forward validation with monthly baseline
+
+print("\nTEST 71: Monthly baseline vs Random Forest")
+
+for test_year in [2020, 2021, 2022, 2023]:
+
+    year_start = pd.Timestamp(f"{test_year}-01-01")
+    next_year = pd.Timestamp(f"{test_year + 1}-01-01")
+
+    # Same training and test periods as Test 70
+    train_71 = extended_ml_data[
+        extended_ml_data["week_start"] +
+        pd.Timedelta(days=6) < year_start
+    ].copy()
+
+    test_71 = extended_ml_data[
+        (extended_ml_data["week_start"] >= year_start) &
+        (
+            extended_ml_data["week_start"] +
+            pd.Timedelta(days=6) < next_year
+        )
+    ].copy()
+
+    test_71 = test_71[
+        test_71["station_code"].isin(
+            train_71["station_code"].unique()
+        )
+    ].copy()
+
+    # Historical probability for each station and month
+    monthly_history = train_71.groupby(
+        ["station_code", "month"]
+    )["good_week"].mean()
+
+    # Fallback: historical probability for the station
+    station_history = train_71.groupby(
+        "station_code"
+    )["good_week"].mean()
+
+    monthly_probabilities = [
+        monthly_history.get(
+            (row.station_code, row.month),
+            station_history[row.station_code]
+        )
+        for row in test_71.itertuples()
+    ]
+
+    y_test_71 = test_71["good_week"].astype(int)
+
+    monthly_brier = brier_score_loss(
+        y_test_71, monthly_probabilities
+    )
+
+    print("\nYear:", test_year)
+    print("Test examples:", len(test_71))
+    print("Monthly Baseline Brier:", round(monthly_brier, 4))
+
+
+# Test 72: Historical baseline with +/- 14-day window
+
+print("\nTEST 72: Rolling 14-day baseline")
+
+for test_year in [2020, 2021, 2022, 2023]:
+
+    year_start = pd.Timestamp(f"{test_year}-01-01")
+    next_year = pd.Timestamp(f"{test_year + 1}-01-01")
+
+    # Use the same periods as Test 70 and 71
+    train_72 = extended_ml_data[
+        extended_ml_data["week_start"] +
+        pd.Timedelta(days=6) < year_start
+    ].copy()
+
+    test_72 = extended_ml_data[
+        (extended_ml_data["week_start"] >= year_start) &
+        (extended_ml_data["week_start"] +
+         pd.Timedelta(days=6) < next_year)
+    ].copy()
+
+    test_72 = test_72[
+        test_72["station_code"].isin(
+            train_72["station_code"].unique()
+        )
+    ].copy()
+
+    # Put dates onto the same reference calendar.
+    # Year 2000 is used to handle leap days consistently.
+    for dataset in [train_72, test_72]:
+        dataset["calendar_day"] = pd.to_datetime(
+            "2000-" +
+            dataset["month"].astype(str).str.zfill(2) +
+            "-" +
+            dataset["day"].astype(str).str.zfill(2)
+        ).dt.dayofyear
+
+    # Fallback probability for each station
+    station_history = train_72.groupby(
+        "station_code"
+    )["good_week"].mean()
+
+    rolling_prob = pd.Series(
+        index=test_72.index, dtype=float
+    )
+
+    # Calculate probabilities from nearby calendar dates
+    for code, station_test in test_72.groupby("station_code"):
+
+        station_train = train_72[
+            train_72["station_code"] == code
+        ]
+
+        for day, rows in station_test.groupby("calendar_day"):
+
+            distance = abs(
+                station_train["calendar_day"] - day
+            )
+
+            # Also handle dates around New Year
+            distance = np.minimum(distance, 366 - distance)
+
+            nearby = station_train[
+                distance <= 14
+            ]
+
+            if len(nearby) > 0:
+                probability = nearby["good_week"].mean()
+            else:
+                probability = station_history[code]
+
+            rolling_prob.loc[rows.index] = probability
+
+    y_test = test_72["good_week"].astype(int)
+
+    rolling_brier = brier_score_loss(
+        y_test, rolling_prob
+    )
+
+    print("\nYear:", test_year)
+    print("Test examples:", len(test_72))
+    print("Rolling Baseline Brier:", round(rolling_brier, 4))
+
+
+# Test 73: Save our existing ML dataset
+
+print("\nTEST 73: Save ML dataset")
+
+# Save the exact dataset prepared in Test 47
+extended_ml_data.to_csv(
+    "ml_dataset.csv",
+    index=False
+)
+
+print("ML dataset saved successfully!")
+print("Rows:", len(extended_ml_data))
+print("Stations:", extended_ml_data["station_code"].nunique())
+print("Columns:", extended_ml_data.columns.tolist())
+

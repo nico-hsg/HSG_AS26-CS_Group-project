@@ -31,6 +31,10 @@ import pandas as pd
 import requests
 from data import load_stations, load_snow_depth, load_weather, load_resorts, link_stations_to_resorts
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.compose import ColumnTransformer
+from sklearn.preprocessing import OneHotEncoder
+from sklearn.pipeline import Pipeline
+
 
 # Add more imports here when you need them, for example:
 #   folium and streamlit_folium (map), plotly (charts), sklearn (model)
@@ -162,63 +166,97 @@ def historical_average(labels, station_code, month, day, prediction_year):
 
 
 
+
 @st.cache_resource
 def train_model(labels, stations):
     """
-    Train a Random Forest to predict good ski weeks.
-    A good week has an average snow depth of at least
-    50 cm over seven consecutive days.
+    Train our Random Forest for historical snow reliability.
+
+    Good week: average snow depth >= 50 cm over 7 days.
     """
 
-    # Combine ski week labels with station altitude
+    # 1. Add station altitude to the existing labels
     data = labels.merge(
-        stations[["station_code", "altitude_m"]],
+        stations[["station_code", "altitude_m"]].drop_duplicates(
+            subset=["station_code"]
+        ),
         on="station_code",
         how="inner"
     )
 
-    # Remove missing observations
+    # 2. Remove incomplete examples
     data = data.dropna(
         subset=["good_week", "altitude_m", "week_start"]
     ).copy()
 
-    # Calculate the last day of each ski week
+    # 3. Use the historical training period 2015-2023
+    data["week_start"] = pd.to_datetime(data["week_start"])
     data["week_end"] = data["week_start"] + pd.Timedelta(days=6)
 
-    # Keep 2024 completely separate for final testing
     data = data[
-        data["week_end"] < pd.Timestamp("2024-01-01")
+        (data["week_start"] >= pd.Timestamp("2015-01-01")) &
+        (data["week_end"] < pd.Timestamp("2024-01-01"))
     ].copy()
 
-    # Extract the date features
+    if data.empty:
+        raise ValueError("No valid training data available.")
+
+    # 4. Create the same features as in our experiments
     data["month"] = data["week_start"].dt.month
     data["day"] = data["week_start"].dt.day
 
-    # Define features and labels
-    features = ["altitude_m", "month", "day"]
+    features = [
+        "altitude_m",
+        "month",
+        "day",
+        "station_code"
+    ]
+
     X = data[features]
     y = data["good_week"].astype(int)
 
-    # Build the same Random Forest as in our tests
-    model = RandomForestClassifier(
+    # 5. Encode the station identity
+    preprocessor = ColumnTransformer(
+        transformers=[
+            (
+                "station",
+                OneHotEncoder(handle_unknown="ignore"),
+                ["station_code"]
+            )
+        ],
+        remainder="passthrough"
+    )
+
+    # 6. Same Random Forest settings as our tested model
+    forest = RandomForestClassifier(
         n_estimators=100,
         max_depth=6,
         min_samples_leaf=20,
         random_state=42
     )
 
-    # Train the model
+    model = Pipeline([
+        ("preprocessing", preprocessor),
+        ("model", forest)
+    ])
+
+    # 7. Train the model
     model.fit(X, y)
 
-    # Remember which stations were used for training
+    # 8. Remember the supported training stations
     model.snowproof_station_codes = set(data["station_code"])
 
-    # Remember the altitude of every trained station
     model.snowproof_station_altitudes = dict(
         zip(data["station_code"], data["altitude_m"])
     )
 
+    # 9. Show training information for verification
+    print("SNOW-PROOF APP MODEL TRAINED")
+    print("Training examples:", len(data))
+    print("Training stations:", data["station_code"].nunique())
+
     return model
+
 
 
 
