@@ -141,6 +141,43 @@ def predict_good_week(model, resort, start_date, end_date):
 # Website part: the filters in the sidebar and the ranked list below the map.
 # =============================================================================
 
+def check_starting_place(starting_place):
+    # Leerzeichen am Anfang und Ende entfernen.
+    starting_place = starting_place.strip()
+
+    if starting_place == "":
+        return [], "Bitte einen Ort oder Bahnhof eingeben."
+
+    url = "https://transport.opendata.ch/v1/locations"
+    parameter = {
+        "query": starting_place,
+        "type": "station"
+    }
+
+    try:
+        antwort = requests.get(url, params=parameter, timeout=15)
+        antwort.raise_for_status()
+        daten = antwort.json()
+
+    except requests.exceptions.RequestException:
+        return [], "Die Ortssuche ist momentan nicht verfügbar."
+
+    # Nur Treffer mit einer Haltestellen-ID verwenden.
+    vorschlaege = []
+
+    for station in daten["stations"]:
+        if station["id"] is not None:
+            vorschlaege.append(station)
+
+    if not vorschlaege:
+        return [], (
+            "Keinen passenden Ort gefunden. Bitte die Schreibweise "
+            "prüfen oder einen nahegelegenen Bahnhof eingeben."
+        )
+
+    return vorschlaege, ""
+
+
 def travel_time_minutes(starting_place, resort):
     """
     Goal:     How long the trip by public transport takes from the user's city / village.
