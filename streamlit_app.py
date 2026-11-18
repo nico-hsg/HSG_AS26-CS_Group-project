@@ -875,7 +875,7 @@ if page == "🎿 Holidayplanner":
 
     resorts = load_resorts()
 
-    st.subheader(f"check_starting_place")
+    st.subheader(check_starting_place)
 
     filtered_resorts = filter_resorts(resorts, possible_cantons, starting_place, max_travelminutes)
 
