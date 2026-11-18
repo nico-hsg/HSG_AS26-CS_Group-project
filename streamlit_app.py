@@ -28,6 +28,10 @@ different sections automatically, but not when two people change the same lines.
 
 import streamlit as st
 import pandas as pd
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.compose import ColumnTransformer
+from sklearn.preprocessing import OneHotEncoder
+from sklearn.pipeline import Pipeline
 import requests
 from data import load_stations, load_snow_depth, load_weather, load_resorts, link_stations_to_resorts
 import folium
@@ -59,18 +63,74 @@ SEASON_MONTHS = [12, 1, 2, 3, 4]  # December to April
 # =============================================================================
 
 
-def label_good_weeks(snow_depth):
-    """
-    Goal:     For every week: was it a good ski week? 1 = yes, 0 = no, empty = unknown.
-    Input:    the snow depth table from load_snow_depth()
-    Website:  Not visible directly. The model learns from these labels.
-    Returns:  a table with station_code, week_start, year, good_week
-    """
-    # TODO [NICO+JULIAN | Task 4]
-    # Hint:      Good = at least GOOD_SNOW_CM on all GOOD_WEEK_DAYS days. One day below -> 0.
-    #            A missing day (and no day below) -> unknown. Only SEASON_MONTHS count.
-    # Done when: you checked a few weeks by hand and they match the rule.
-    pass
+def check_good_week(snow_depth):
+
+    # Check that exactly 7 days are available
+    if len(snow_depth) != 7:
+        return None
+
+    # Check whether any snow measurement is missing
+    if pd.isna(snow_depth).any():
+        return None
+
+    # Calculate average snow depth
+    average = sum(snow_depth) / 7
+
+    # Decide whether it was a good week
+    if average >= 50:
+        return 1
+    else:
+        return 0
+
+
+def label_good_weeks(snow_data):
+
+    # Sort measurements by station and date
+    snow_data = snow_data.sort_values(["station_code", "date"])
+
+    # Store all evaluated weeks
+    results = []
+
+    # Go through every station separately
+    for station, station_data in snow_data.groupby("station_code"):
+
+        station_data = station_data.reset_index(drop=True)
+
+        # Check every possible seven-day period
+        for i in range(len(station_data) - 6):
+
+            week_data = station_data.iloc[i:i+7]
+
+            start_date = week_data["date"].iloc[0]
+            end_date = week_data["date"].iloc[-1]
+
+
+            # Check that all seven dates are consecutive
+            date_differences = week_data["date"].diff().dropna()
+
+            if not (date_differences == pd.Timedelta(days=1)).all():
+                continue
+
+
+
+            # Only evaluate weeks fully within December-April
+            if not all(month in [12, 1, 2, 3, 4]
+                       for month in week_data["date"].dt.month):
+                continue
+
+            # Calculate the label
+            week = week_data["snow_depth_cm"].tolist()
+            label = check_good_week(week)
+
+            # Save the result
+            results.append({
+                "station_code": station,
+                "week_start": start_date,
+                "year": start_date.year,
+                "good_week": label
+            })
+
+    return pd.DataFrame(results)
 
 
 # =============================================================================
@@ -78,62 +138,389 @@ def label_good_weeks(snow_depth):
 # Website part: the chance in the snow check, and the "About our model" tab.
 # =============================================================================
 
-def historical_average(labels, station_code, week_of_year):
+
+def historical_average(labels, station_code, month, day, prediction_year):
     """
-    Goal:     The simple guess our model must beat: how often was this week good in the past?
-    Input:    the labels, one station, one week of the year
-    Website:  "Historical average for this week" in the snow check.
-    Returns:  a number between 0 and 1
+    Calculate the historical chance of a good ski week.
+
+    Use the same station and a +/-14-day calendar window.
+    Only use observations from years before the prediction.
     """
-    # TODO [JULIAN | Task 6]
-    # Hint:      The share of good weeks in all earlier years. Skip unknown weeks.
-    # Done when: Davos in mid-February gives a high value, a low station in December a low one.
-    pass
+
+    import numpy as np
+
+    # 1. Select valid historical weeks from this station
+    history = labels[
+        (labels["station_code"] == station_code) &
+        (labels["good_week"].notna())
+    ].copy()
+
+    if history.empty:
+        return None
+
+    # 2. Convert the dates into Pandas timestamps
+    history["week_start"] = pd.to_datetime(
+        history["week_start"]
+    )
+
+    # 3. Use only previous years
+    history = history[
+        history["week_start"].dt.year < prediction_year
+    ].copy()
+
+    if history.empty:
+        return None
+
+    # 4. Convert dates into calendar days
+    # The year 2000 is used because it includes February 29
+    target_date = pd.Timestamp(
+        year=2000, month=month, day=day
+    )
+    target_day = target_date.dayofyear
+
+    history_dates = pd.to_datetime(
+        "2000-" +
+        history["week_start"].dt.month.astype(str).str.zfill(2) +
+        "-" +
+        history["week_start"].dt.day.astype(str).str.zfill(2)
+    )
+
+    history["calendar_day"] = history_dates.dt.dayofyear
+
+    # 5. Calculate the distance to the requested date
+    distance = abs(history["calendar_day"] - target_day)
+
+    # Also handle dates around New Year
+    distance = np.minimum(distance, 366 - distance)
+
+    # 6. Select weeks within +/-14 days
+    nearby = history[distance <= 14]
+
+    # 7. Use the nearby historical average
+    if not nearby.empty:
+        return float(nearby["good_week"].mean())
+
+    # Fallback: average of all known weeks at this station
+    return float(history["good_week"].mean())
 
 
+
+
+
+@st.cache_resource
 def train_model(labels, stations):
     """
-    Goal:     Train our own model that predicts the chance of a good week.
-    Input:    the labels and the stations (for altitude)
-    Website:  Not visible directly. Powers the chance in the snow check.
-    Returns:  the trained model
+    Train our Random Forest for historical snow reliability.
+
+    Good week: average snow depth >= 50 cm over 7 days.
     """
-    # TODO [JULIAN+JAN | Task 6]
-    # Hint:      Only use inputs you know BEFORE the holiday: altitude, week of the season, year,
-    #            past share of good weeks. Never the weather of the holiday week itself.
-    #            Try two scikit-learn models (e.g. logistic regression, random forest), keep the better.
-    #            Streamlit's @st.cache_resource trains it only once.
-    # Done when: the model gives a chance between 0 and 1 for any station and week.
-    pass
+
+    # 1. Add station altitude to the existing labels
+    data = labels.merge(
+        stations[["station_code", "altitude_m"]].drop_duplicates(
+            subset=["station_code"]
+        ),
+        on="station_code",
+        how="inner"
+    )
+
+    # 2. Remove incomplete examples
+    data = data.dropna(
+        subset=["good_week", "altitude_m", "week_start"]
+    ).copy()
+
+    # 3. Use the historical training period 2015-2023
+    data["week_start"] = pd.to_datetime(data["week_start"])
+    data["week_end"] = data["week_start"] + pd.Timedelta(days=6)
+
+    data = data[
+        (data["week_start"] >= pd.Timestamp("2015-01-01")) &
+        (data["week_end"] < pd.Timestamp("2024-01-01"))
+    ].copy()
+
+    if data.empty:
+        raise ValueError("No valid training data available.")
+
+    # 4. Create the same features as in our experiments
+    data["month"] = data["week_start"].dt.month
+    data["day"] = data["week_start"].dt.day
+
+    features = [
+        "altitude_m",
+        "month",
+        "day",
+        "station_code"
+    ]
+
+    X = data[features]
+    y = data["good_week"].astype(int)
+
+    # 5. Encode the station identity
+    preprocessor = ColumnTransformer(
+        transformers=[
+            (
+                "station",
+                OneHotEncoder(handle_unknown="ignore"),
+                ["station_code"]
+            )
+        ],
+        remainder="passthrough"
+    )
+
+    # 6. Same Random Forest settings as our tested model
+    forest = RandomForestClassifier(
+        n_estimators=100,
+        max_depth=6,
+        min_samples_leaf=20,
+        random_state=42
+    )
+
+    model = Pipeline([
+        ("preprocessing", preprocessor),
+        ("model", forest)
+    ])
+
+    # 7. Train the model
+    model.fit(X, y)
+
+    # 8. Remember the supported training stations
+    model.snowproof_station_codes = set(data["station_code"])
+
+    model.snowproof_station_altitudes = dict(
+        zip(data["station_code"], data["altitude_m"])
+    )
+
+    # 9. Show training information for verification
+    print("SNOW-PROOF APP MODEL TRAINED")
+    print("Training examples:", len(data))
+    print("Training stations:", data["station_code"].nunique())
+
+    return model
+
+
+
 
 
 def test_model(labels, stations):
     """
-    Goal:     Show that the model works: train on the past, test on later years, compare with
-              the historical average.
-    Input:    the labels and the stations
-    Website:  The results table and chart in the "About our model" tab.
-    Returns:  a table with one row per round: train years, test years, model score, average score
+    Evaluate our Random Forest using walk-forward validation.
+
+    Compare the model with a historical +/-14-day baseline.
+    Returns one result row per test year.
     """
-    # TODO [JULIAN | Task 7]
-    # Hint:      Walk-forward: train 1950-1969 test 1970-1979, train 1950-1979 test 1980-1989, ...
-    #            Final check: train 1950-2014, test 2015-2025, used only once.
-    #            Scores: accuracy and Brier score. Change the years if the stations start later.
-    # Done when: you can say in one sentence whether the model beats the historical average.
-    pass
+
+    import numpy as np
+    from sklearn.metrics import accuracy_score, brier_score_loss
+
+    # Prepare the same historical dataset as in our experiments
+    data = labels.merge(
+        stations[["station_code", "altitude_m"]].drop_duplicates(
+            subset=["station_code"]
+        ),
+        on="station_code",
+        how="inner"
+    )
+
+    data = data.dropna(
+        subset=["good_week", "altitude_m", "week_start"]
+    ).copy()
+
+    data["week_start"] = pd.to_datetime(data["week_start"])
+    data["week_end"] = data["week_start"] + pd.Timedelta(days=6)
+
+    data = data[
+        (data["week_start"] >= pd.Timestamp("2015-01-01")) &
+        (data["week_end"] < pd.Timestamp("2024-01-01"))
+    ].copy()
+
+    data["month"] = data["week_start"].dt.month
+    data["day"] = data["week_start"].dt.day
+
+    results = []
+
+    # Test four years, always training only on the past
+    for year in [2020, 2021, 2022, 2023]:
+
+        year_start = pd.Timestamp(f"{year}-01-01")
+        next_year = pd.Timestamp(f"{year + 1}-01-01")
+
+        train = data[data["week_end"] < year_start].copy()
+
+        test = data[
+            (data["week_start"] >= year_start) &
+            (data["week_end"] < next_year)
+        ].copy()
+
+        # Evaluate only stations available during training
+        test = test[
+            test["station_code"].isin(
+                train["station_code"].unique()
+            )
+        ].copy()
+
+        if train.empty or test.empty:
+            continue
+
+        # Train the actual app model on historical data
+        model = train_model(
+            train[["station_code", "week_start", "good_week"]],
+            stations
+        )
+
+        # Predict probabilities for the test year
+        X_test = test[
+            ["altitude_m", "month", "day", "station_code"]
+        ]
+        y_test = test["good_week"].astype(int)
+
+        rf_probabilities = model.predict_proba(X_test)[:, 1]
+
+        rf_accuracy = accuracy_score(
+            y_test,
+            (rf_probabilities >= 0.5).astype(int)
+        )
+
+        rf_brier = brier_score_loss(
+            y_test, rf_probabilities
+        )
+
+        # Historical +/-14-day baseline
+        for dataset in [train, test]:
+            dataset["calendar_day"] = pd.to_datetime(
+                "2000-" +
+                dataset["month"].astype(str).str.zfill(2) +
+                "-" +
+                dataset["day"].astype(str).str.zfill(2)
+            ).dt.dayofyear
+
+        station_history = train.groupby(
+            "station_code"
+        )["good_week"].mean()
+
+        baseline_probabilities = pd.Series(
+            index=test.index, dtype=float
+        )
+
+        for code, station_test in test.groupby("station_code"):
+
+            station_train = train[
+                train["station_code"] == code
+            ]
+
+            for day, rows in station_test.groupby("calendar_day"):
+
+                distance = abs(
+                    station_train["calendar_day"] - day
+                )
+
+                # Handle dates around New Year
+                distance = np.minimum(distance, 366 - distance)
+
+                nearby = station_train[distance <= 14]
+
+                if len(nearby) > 0:
+                    probability = nearby["good_week"].mean()
+                else:
+                    probability = station_history[code]
+
+                baseline_probabilities.loc[rows.index] = probability
+
+        baseline_brier = brier_score_loss(
+            y_test, baseline_probabilities
+        )
+
+        # Store results for the About our model page
+        results.append({
+            "test_year": year,
+            "train_examples": len(train),
+            "test_examples": len(test),
+            "rf_accuracy": rf_accuracy,
+            "rf_brier": rf_brier,
+            "baseline_brier": baseline_brier
+        })
+
+    return pd.DataFrame(results)
+
+
 
 
 def predict_good_week(model, resort, start_date, end_date):
     """
-    Goal:     The chance of a good ski week for one resort and the user's dates.
-    Input:    the trained model, one resort, the holiday dates
-    Website:  The big number "68% chance of a good ski week" in the snow check.
-    Returns:  a number between 0 and 1 (or nothing if the resort has no station)
+    Estimate the probability of a good ski week for one resort.
+
+    A good week has an average snow depth of at least 50 cm
+    across seven consecutive days.
     """
-    # TODO [JULIAN | Task 7]
-    # Hint:      Build the same inputs as in train_model for these dates, then ask the model.
-    # Done when: a high resort in February gets a higher chance than a low resort in December.
-    pass
+
+    # Convert dates to Pandas timestamps
+    start = pd.to_datetime(start_date)
+    end = pd.to_datetime(end_date)
+
+    # Only accept a seven-day period
+    if (end - start).days != 6:
+        return None
+
+    # Only accept weeks within the ski season
+    week_dates = pd.date_range(start, end)
+
+    if not all(day.month in SEASON_MONTHS for day in week_dates):
+        return None
+
+    # Get the resort's snow measurement station
+    station_code = resort.get("station_code")
+
+    if pd.isna(station_code):
+        return None
+
+    # Check whether the station was used for training
+    if station_code not in model.snowproof_station_codes:
+        return None
+
+    # Get the station altitude used during training
+    altitude = model.snowproof_station_altitudes[station_code]
+
+    # Prepare the same four features as during training
+    prediction_input = pd.DataFrame([{
+        "altitude_m": altitude,
+        "month": start.month,
+        "day": start.day,
+        "station_code": station_code
+    }])
+
+    # Calculate the probability of a good week
+    probability = model.predict_proba(prediction_input)[0, 1]
+
+    return float(probability)
+
+
+def predict_resorts(model, resorts, start_date, end_date):
+    """
+    Predict good-week probabilities for multiple ski resorts.
+
+    Returns a list of dictionaries for the resort ranking.
+    """
+
+    results = []
+
+    # Go through each resort
+    for _, resort in resorts.iterrows():
+
+        # Predict the probability for this resort
+        probability = predict_good_week(
+            model, resort, start_date, end_date
+        )
+
+        # Store the result for the ranking
+        results.append({
+            "resort_id": resort["resort_id"],
+            "week_start": str(pd.to_datetime(start_date).date()),
+            "week_end": str(pd.to_datetime(end_date).date()),
+            "probability": probability
+        })
+
+    return results
+
+
 
 
 # =============================================================================
