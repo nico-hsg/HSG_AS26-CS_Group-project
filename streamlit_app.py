@@ -693,6 +693,7 @@ def rank_resorts(resorts, chances):
 # Website part: everything on the screen. Look at the ui-prototype branch for the look.
 # =============================================================================
 
+
 def show_sidebar():
     """
     Goal:     The optional filters on the left side.
@@ -808,6 +809,24 @@ def show_map(resorts, chances):
 
     return None 
 
+resorts = load_resorts()
+
+starting_place, possible_cantons, max_travelminutes, travel_date_start, travel_date_end = show_sidebar()
+
+filtered_resorts = filter_resorts(resorts, possible_cantons, starting_place, max_travelminutes)
+
+# Select relevant columns
+relevant_data = filtered_resorts[
+    [
+        "name",
+        "canton",
+        "base_altitude_m",
+        "summit_altitude_m",
+        "piste_km_total",
+        "lifts"
+    ]
+]
+
 
 
 
@@ -903,12 +922,6 @@ if page == "🏠 Home":
     )
 
 # Here we code the highly important holidayplaner as our main service
-resorts = load_resorts()
-
-starting_place, possible_cantons, max_travelminutes, travel_date_start, travel_date_end = show_sidebar()
-
-filtered_resorts = filter_resorts(resorts, possible_cantons, starting_place, max_travelminutes)
-
 if page == "🎿 Holidayplanner":
 
     st.title("🎿 Holidayplanner")
@@ -919,20 +932,9 @@ if page == "🎿 Holidayplanner":
 
     show_map(filtered_resorts, chances=None)
 
-# Select relevant columns
-relevant_data = filtered_resorts[
-    [
-        "name",
-        "canton",
-        "base_altitude_m",
-        "summit_altitude_m",
-        "piste_km_total",
-        "lifts"
-    ]
-]
+    st.dataframe(relevant_data)
 
-# Display table in Streamlit
-st.dataframe(relevant_data)
+
 
 
 # Here we code the "Real Estate Advisor"
