@@ -725,7 +725,7 @@ def show_sidebar():
         step=15
     )
 
-    # The timespan in which the user's holiday takes place consists of the start and end date. The selection of these dates is code in the following, not allowing dates outside of the ski season. Therefore only between December and April is possible
+    # The timespan in which the user's holiday takes place consists of the start and end date. The selection of these dates is coded in the following
     travel_date_start = st.sidebar.date_input(
         "Start date of your holiday"
     )
@@ -733,6 +733,14 @@ def show_sidebar():
     travel_date_end = st.sidebar.date_input(
         "End date of your holiday"
     )
+
+    # As the skiseason only takes place from December to April, we need to check whether the user has selected a date outside of this range. If so, we will display a warning message and ask the user to select a date within the skiseason
+    if travel_date_start != None and travel_date_end != None:
+        if travel_date_start.month < 12 and travel_date_start.month > 4 or travel_date_end.month < 12 and travel_date_end.month > 4:
+            st.sidebar.warning("Please select a date within the skiseason (December to April)")
+
+
+    # Furthermore we need to check whether the end date is after the start date. If not, we will display a warning message and ask the user to select a valid, logical date range
 
     return starting_place, possible_cantons, max_travelminutes, travel_date_start, travel_date_end
 
