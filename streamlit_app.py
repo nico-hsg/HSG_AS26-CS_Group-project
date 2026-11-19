@@ -903,6 +903,8 @@ if page == "🏠 Home":
     )
 
 # Here we code the highly important holidayplaner as our main service
+filtered_resorts = filter_resorts(resorts, possible_cantons, starting_place, max_travelminutes)
+
 if page == "🎿 Holidayplanner":
 
     st.title("🎿 Holidayplanner")
@@ -912,8 +914,6 @@ if page == "🎿 Holidayplanner":
     starting_place, possible_cantons, max_travelminutes, travel_date_start, travel_date_end = show_sidebar()
 
     resorts = load_resorts()
-
-    filtered_resorts = filter_resorts(resorts, possible_cantons, starting_place, max_travelminutes)
 
     st.write(f"{len(filtered_resorts)} of {len(resorts)} resorts match your filters.")
 
