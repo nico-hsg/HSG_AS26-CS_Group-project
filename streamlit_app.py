@@ -174,7 +174,7 @@ def label_good_weeks(snow_data):
 # =============================================================================
 
 
-
+# AI-generated implementation: OpenAI, ChatGPT (2026).
 def historical_average(labels, station_code, month, day, prediction_year):
     """
     Calculate the historical chance of a good ski week.
@@ -242,7 +242,7 @@ def historical_average(labels, station_code, month, day, prediction_year):
 
 
 
-
+# AI-generated implementation: OpenAI, ChatGPT (2026).
 @st.cache_resource
 def train_model(labels, stations, training_end="2026-04-30"):
     """
@@ -341,7 +341,7 @@ def train_model(labels, stations, training_end="2026-04-30"):
 
 
 
-
+# AI-generated implementation: OpenAI, ChatGPT (2026).
 def test_model(labels, stations):
     """
     Evaluate our Random Forest using walk-forward validation.
@@ -487,7 +487,7 @@ def test_model(labels, stations):
 
 
 
-
+# AI-generated implementation: OpenAI, ChatGPT (2026).
 def predict_good_week(model, resort, start_date, end_date):
     """
     Estimate the probability of a good ski week for one resort.
@@ -536,7 +536,7 @@ def predict_good_week(model, resort, start_date, end_date):
 
     return float(probability)
 
-
+# AI-generated implementation: OpenAI, ChatGPT (2026).
 def predict_resorts(model, resorts, start_date, end_date):
     """
     Predict good-week probabilities for multiple ski resorts.
