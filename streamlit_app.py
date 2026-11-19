@@ -532,7 +532,7 @@ def check_starting_place(starting_place):
     # Leerzeichen am Anfang und Ende entfernen.
     starting_place = starting_place.strip()
 
-    if starting_place == "":
+    if starting_place == "": # Dieser Code kann laut Noah gelöscht werden, er hat diese Funtion bereits bei seinem Teil eingebaut
         return [], "Bitte einen Ort oder Bahnhof eingeben."
 
     url = "https://transport.opendata.ch/v1/locations"
@@ -705,16 +705,20 @@ def show_sidebar():
     
     st.sidebar.subheader("Filters for your trip")
 
-    # Starting location with which we calculate the travel time
+    # Input of the starting location with which we calculate the travel time
     starting_place = st.sidebar.text_input(
         "Please enter your hometown with which we should calculate your travel time",
         placeholder="e.g. Zürich"
     )
 
-    # Cantons in which the user possibly wants to travel
+    # We need to check whether the user has entered a valid starting location. If not, we will display a warning message and ask the user to enter a valid location
+    # if starting_place is not None: Hier muss ich noch auf die Prüfung der Eingabe von Jan warten
+    
+
+    # Input of the cantons in which the user possibly wants to travel
     possible_cantons = st.sidebar.multiselect(
         "Possible cantons for your trip",
-        ["ZH", "BE", "LU", "UR", "GR", "VS", "TI", "GL"] # Possible anwsers to be adjusted later on
+        ["ZH", "BE", "LU", "UR", "GR", "VS", "TI", "GL"]
     )
 
     # Maximum time (in minutes) the user wants to travel from the given starting location to the disered destination
@@ -745,10 +749,16 @@ def show_sidebar():
     if travel_date_start is not None and travel_date_end is not None:
         if travel_date_start >= travel_date_end:
             st.sidebar.warning("Please select a valid date range (end date must be after start date)")
+
+    # Finally, we need to check whether the user has selected a date range that is exactly 7 days long. If not, we will display a warning message and ask the user to select a valid date range
+    if travel_date_start is not None and travel_date_end is not None:
+        if (travel_date_end - travel_date_start).days != 6:
+            st.sidebar.warning("Please select a date range that is exactly 7 days long")
         else:
             st.sidebar.success("You have selected a valid date range for your holiday")
 
     return starting_place, possible_cantons, max_travelminutes, travel_date_start, travel_date_end
+
 
 
 
@@ -787,9 +797,8 @@ def show_map(resorts, chances):
 
     map_data = st_folium(map, width=None, height=600) # This code ensures the width and height of the map when displayed later on
 
-    return None # Is this important?
+    return None 
 
-    # Second problem: When the filter excludes some resorts, their circles are not displayed on the map. Is this as inteded or should those circles be red?
 
 
 
