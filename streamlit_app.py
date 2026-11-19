@@ -903,6 +903,10 @@ if page == "🏠 Home":
     )
 
 # Here we code the highly important holidayplaner as our main service
+resorts = load_resorts()
+
+starting_place, possible_cantons, max_travelminutes, travel_date_start, travel_date_end = show_sidebar()
+
 filtered_resorts = filter_resorts(resorts, possible_cantons, starting_place, max_travelminutes)
 
 if page == "🎿 Holidayplanner":
@@ -910,10 +914,6 @@ if page == "🎿 Holidayplanner":
     st.title("🎿 Holidayplanner")
 
     st.subheader(" This page helps you plan your Skiing trip based on the probability of great snow circumstances")
-
-    starting_place, possible_cantons, max_travelminutes, travel_date_start, travel_date_end = show_sidebar()
-
-    resorts = load_resorts()
 
     st.write(f"{len(filtered_resorts)} of {len(resorts)} resorts match your filters.")
 
