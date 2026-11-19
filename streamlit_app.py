@@ -877,7 +877,7 @@ if page == "🎿 Holidayplanner":
 
     st.subheader(" This page helps you plan your Skiing trip based on the probability of great snow circumstances")
 
-    starting_place, possible_cantons, max_travelminutes, travel_dates = show_sidebar()
+    starting_place, possible_cantons, max_travelminutes, travel_date_start, travel_date_end = show_sidebar()
 
     resorts = load_resorts()
 
