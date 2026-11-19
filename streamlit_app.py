@@ -919,7 +919,21 @@ if page == "🎿 Holidayplanner":
 
     show_map(filtered_resorts, chances=None)
 
-    st.dataframe = pd.DataFrame(data=filtered_resorts)["Name", "canton", "base_altitude_m", "peak_altitude_m", "piste_km_total", "lifts_total"]
+# Select relevant columns
+relevant_data = filtered_resorts[
+    [
+        "name",
+        "canton",
+        "base_altitude_m",
+        "summit_altitude_m",
+        "piste_km_total",
+        "lifts"
+    ]
+]
+
+# Display table in Streamlit
+st.dataframe(relevant_data)
+
 
 # Here we code the "Real Estate Advisor"
 if page == "🏡 Real Estate Advisor":
