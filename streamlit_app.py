@@ -809,24 +809,6 @@ def show_map(resorts, chances):
 
     return None 
 
-resorts = load_resorts()
-
-starting_place, possible_cantons, max_travelminutes, travel_date_start, travel_date_end = show_sidebar()
-
-filtered_resorts = filter_resorts(resorts, possible_cantons, starting_place, max_travelminutes)
-
-# Select relevant columns
-relevant_data = filtered_resorts[
-    [
-        "name",
-        "canton",
-        "base_altitude_m",
-        "summit_altitude_m",
-        "piste_km_total",
-        "lifts"
-    ]
-]
-
 
 
 
@@ -927,6 +909,24 @@ if page == "🎿 Holidayplanner":
     st.title("🎿 Holidayplanner")
 
     st.subheader(" This page helps you plan your Skiing trip based on the probability of great snow circumstances")
+
+    starting_place, possible_cantons, max_travelminutes, travel_date_start, travel_date_end = show_sidebar()
+
+    resorts = load_resorts()
+
+    filtered_resorts = filter_resorts(resorts, possible_cantons, starting_place, max_travelminutes)
+
+    # Select relevant columns
+    relevant_data = filtered_resorts[
+    [
+        "name",
+        "canton",
+        "base_altitude_m",
+        "summit_altitude_m",
+        "piste_km_total",
+        "lifts"
+    ]
+]
 
     st.write(f"{len(filtered_resorts)} of {len(resorts)} resorts match your filters.")
 
