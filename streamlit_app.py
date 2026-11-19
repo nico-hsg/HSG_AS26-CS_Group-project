@@ -919,6 +919,8 @@ if page == "🎿 Holidayplanner":
 
     show_map(filtered_resorts, chances=None)
 
+    st.dataframe(filtered_resorts)
+
 # Here we code the "Real Estate Advisor"
 if page == "🏡 Real Estate Advisor":
     st.title("🏡 Alpine Real Estate Advisor")
