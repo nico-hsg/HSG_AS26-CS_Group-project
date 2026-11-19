@@ -742,6 +742,9 @@ def show_sidebar():
             st.sidebar.warning("Please select a date within the skiseason (December to April)")
 
     # Furthermore we need to check whether the end date is after the start date. If not, we will display a warning message and ask the user to select a valid, logical date range
+    if travel_date_start is not None and travel_date_end is not None:
+        if travel_date_end < travel_date_start:
+            st.sidebar.warning("Please select a valid date range (end date must be after start date)")
 
     return starting_place, possible_cantons, max_travelminutes, travel_date_start, travel_date_end
 
