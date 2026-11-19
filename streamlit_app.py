@@ -138,6 +138,42 @@ def label_good_weeks(snow_data):
 # Website part: the chance in the snow check, and the "About our model" tab.
 # =============================================================================
 
+# =============================================================================
+# AI USAGE DECLARATION – SECTION 3: MACHINE LEARNING
+# =============================================================================
+#
+# All five functions in this section were generated and iteratively
+# refined with OpenAI ChatGPT (2026).
+#
+# AI-generated functions:
+# - historical_average()
+# - train_model()
+# - test_model()
+# - predict_good_week()
+# - predict_resorts()
+#
+# ChatGPT was used extensively for Python code generation,
+# debugging, test scripts, data preparation, model training,
+# evaluation and prediction logic.
+#
+# Development process:
+# The AI-generated code was executed locally and developed through
+# repeated tests, error analysis and discussions of the results.
+# Historical walk-forward evaluations and comparisons with a
+# simple historical baseline were used to assess model quality.
+#
+# The implementation and testing commands were largely generated
+# by AI. Human involvement focused on defining requirements,
+# executing tests, reviewing results and discussing limitations.
+#
+# AI reference:
+# OpenAI. (2026). ChatGPT [Large language model].
+# https://chatgpt.com/
+#
+# This declaration applies to all five functions in Section 3.
+# =============================================================================
+
+
 
 def historical_average(labels, station_code, month, day, prediction_year):
     """
