@@ -781,17 +781,26 @@ def show_map(resorts, chances):
         # Calculation of the radius of the circle, so that users can directly see the size of the resorts on the map
         map_radius = resort["piste_km_total"] / 10
     
-        # This code ensures that the radius of the circle is not to big or to small, to ensure readability. Current problem: When zooming in our out the size of the circles does not change, so that the circles are to big when zooming in and to small when zooming out. This needs to be fixed later on.
+        # This code ensures that the radius of the circle is not to big or to small, to ensure readability
         if map_radius > 15:
             map_radius = 15
         elif map_radius < 5:
             map_radius = 5 
 
+        # To ensure greater overview, the colour of the circle should be based on the probability of a good week. The following code ensures that the colour is green for a high probability, orange for a medium probability and red for a low probability
+        # if good_snow_chance is not None:
+            #if good_snow_chance >= 0.7:
+                color_circle = "green"
+            # elif good_snow_chance >= 0.3:
+                color_circle = "orange"
+            # else:
+                color_circle = "red"
+
         folium.CircleMarker(
         location=[resort["lat"], resort["lon"]], # Based on the latitude and longitude of the resorts (given by the data code), the circles are placed on the map
         radius = map_radius,
         popup = resort["name"], # This code displays the name of the resort when clicking on it's circle on the map
-        color = "blue", # Colors should be adjusted later on based on the snow conditions, but for now they are all blue
+        color = "blue", # Change the colour to color_circle later on 
         fill = True # It should not only be a circle, but a filled circle for better visibility (especially for the colour) 
         ).add_to(map)
 
