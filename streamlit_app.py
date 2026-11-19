@@ -790,11 +790,11 @@ def show_map(resorts, chances):
         # To ensure greater overview, the colour of the circle should be based on the probability of a good week. The following code ensures that the colour is green for a high probability, orange for a medium probability and red for a low probability
         # if good_snow_chance is not None:
             #if good_snow_chance >= 0.7:
-                color_circle = "green"
+                #color_circle #= "green"
             # elif good_snow_chance >= 0.3:
-                color_circle = "orange"
+                #color_circle #= "orange"
             # else:
-                color_circle = "red"
+                #color_circle #= "red"
 
         folium.CircleMarker(
         location=[resort["lat"], resort["lon"]], # Based on the latitude and longitude of the resorts (given by the data code), the circles are placed on the map
