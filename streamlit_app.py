@@ -725,10 +725,16 @@ def show_sidebar():
         step=15
     )
 
-    # Timespan in which the user's holiday takes place
-    travel_dates = 1 # Needs to be fully coded later on with help from Jan
+    # The timespan in which the user's holiday takes place consists of the start and end date. The selection of these dates is code in the following, not allowing dates outside of the ski season. Therefore only between December and April is possible
+    travel_date_start = st.sidebar.date_input(
+        "Start date of your holiday"
+    )
 
-    return starting_place, possible_cantons, max_travelminutes, travel_dates
+    travel_date_end = st.sidebar.date_input(
+        "End date of your holiday"
+    )
+
+    return starting_place, possible_cantons, max_travelminutes, travel_date_start, travel_date_end
 
 
 
