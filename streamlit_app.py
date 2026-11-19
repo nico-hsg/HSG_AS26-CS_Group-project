@@ -746,7 +746,7 @@ def show_sidebar():
         if travel_date_start >= travel_date_end:
             st.sidebar.warning("Please select a valid date range (end date must be after start date)")
         else:
-            st.sidebar.sucess("You have selected a valid date range for your holiday")
+            st.sidebar.success("You have selected a valid date range for your holiday")
 
     return starting_place, possible_cantons, max_travelminutes, travel_date_start, travel_date_end
 
