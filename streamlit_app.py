@@ -919,7 +919,7 @@ if page == "🎿 Holidayplanner":
 
     show_map(filtered_resorts, chances=None)
 
-    st.dataframe.loc(data=filtered_resorts)["Name", "canton", "base_altitude_m", "peak_altitude_m", "piste_km_total", "lifts_total"]
+    st.dataframe = pd.DataFrame(data=filtered_resorts)["Name", "canton", "base_altitude_m", "peak_altitude_m", "piste_km_total", "lifts_total"]
 
 # Here we code the "Real Estate Advisor"
 if page == "🏡 Real Estate Advisor":
