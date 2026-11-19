@@ -208,7 +208,7 @@ def historical_average(labels, station_code, month, day, prediction_year):
 
 
 @st.cache_resource
-def train_model(labels, stations):
+def train_model(labels, stations, training_end="2026-04-30"):
     """
     Train our Random Forest for historical snow reliability.
 
@@ -229,14 +229,19 @@ def train_model(labels, stations):
         subset=["good_week", "altitude_m", "week_start"]
     ).copy()
 
-    # 3. Use the historical training period 2015-2023
+    
+    # 3. Use the latest completed and validated winter
     data["week_start"] = pd.to_datetime(data["week_start"])
     data["week_end"] = data["week_start"] + pd.Timedelta(days=6)
 
+    TRAINING_START = pd.Timestamp("2015-01-01")
+    TRAINING_END = pd.Timestamp(training_end)
+
     data = data[
-        (data["week_start"] >= pd.Timestamp("2015-01-01")) &
-        (data["week_end"] < pd.Timestamp("2024-01-01"))
+        (data["week_start"] >= TRAINING_START) &
+        (data["week_end"] <= TRAINING_END)
     ].copy()
+
 
     if data.empty:
         raise ValueError("No valid training data available.")
@@ -362,10 +367,13 @@ def test_model(labels, stations):
             continue
 
         # Train the actual app model on historical data
+        
         model = train_model(
             train[["station_code", "week_start", "good_week"]],
-            stations
+            stations,
+            training_end=f"{year - 1}-12-31"
         )
+
 
         # Predict probabilities for the test year
         X_test = test[
