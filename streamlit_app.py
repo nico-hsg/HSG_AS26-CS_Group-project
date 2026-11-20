@@ -906,8 +906,7 @@ if page == "🏠 Home":
     st.title("Welcome to Snow-Proof 🏔️")
 
     st.subheader(
-        "Enjoy Skiing in Switzerland"
-        "Optimize the planning of your trip."
+        "Enjoy Skiing in Switzerland by optimizing the planning of your trip."
     )
 
 # Here we code the highly important holidayplaner as our main service
