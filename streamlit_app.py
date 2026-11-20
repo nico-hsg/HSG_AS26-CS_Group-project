@@ -727,7 +727,7 @@ def show_sidebar():
     # Input of the cantons in which the user possibly wants to travel
     possible_cantons = st.sidebar.multiselect(
         "Possible cantons for your trip",
-        ["ZH", "BE", "LU", "UR", "GR", "VS", "TI", "GL"]
+        ["ZH", "BE", "LU", "UR", "GR", "VS", "TI", "GL", "OW", "SG"]
     )
 
     # Maximum time (in minutes) the user wants to travel from the given starting location to the disered destination
