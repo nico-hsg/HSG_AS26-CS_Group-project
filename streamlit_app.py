@@ -897,7 +897,6 @@ page = st.sidebar.radio(
     [
         "🏠 Home",
         "🎿 Holidayplanner",
-        "🏡 Real Estate Advisor",
         "👥 About Us"
     ],)
 
@@ -942,12 +941,6 @@ if page == "🎿 Holidayplanner":
 
     st.dataframe(relevant_data)
 
-
-
-
-# Here we code the "Real Estate Advisor"
-if page == "🏡 Real Estate Advisor":
-    st.title("🏡 Alpine Real Estate Advisor")
 
 # Here we code the "About Us" section
 if page == "👥 About Us":
